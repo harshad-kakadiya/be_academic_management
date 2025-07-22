@@ -1,0 +1,42 @@
+{
+  "name": "be_academic_management",
+  "version": "1.0.0",
+  "description": "",
+  "homepage": "https://github.com/harshad-kakadiya/be_academic_management#readme",
+  "bugs": {
+    "url": "https://github.com/harshad-kakadiya/be_academic_management/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/harshad-kakadiya/be_academic_management.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "bcryptjs": "^3.0.2",
+    "body-parser": "^2.2.0",
+    "cloudinary": "^2.7.0",
+    "compression": "^1.8.1",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.0",
+    "express": "^5.1.0",
+    "express-async-handler": "^1.2.0",
+    "express-session": "^1.18.2",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "moment": "^2.30.1",
+    "mongoose": "^8.16.4",
+    "morgan": "^1.10.1",
+    "multer": "^2.0.2",
+    "nodemon": "^3.1.10"
+  }
+}
