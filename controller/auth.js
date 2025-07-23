@@ -2,10 +2,13 @@ const mongoose = require("mongoose");
 const UserModel = require("../models/user");
 const CompanyModel = require("../models/company");
 const ConfigModel = require("../models/config");
+const PasswordResetModel = require("../models/password-reset");
 
 const {signLoginToken, signRefreshToken} = require("../helpers/jwt");
 const {createHash, verifyHash} = require("../helpers/hash");
 const generateUniqueUsername = require("../helpers/generateUsername");
+const {sendEmail} = require("../services/mailer");
+const {getOTPMailTemplate} = require("../templates/resetPasswordTemplate");
 
 // Set JWT tokens and store in user
 const setTokens = async (userId) => {
@@ -255,9 +258,62 @@ const getUser = async (req, res) => {
     }
 };
 
+// Set OTP
+const sendResetOTP = async (req, res) => {
+    try {
+        const {email} = req.body;
+        const user = await UserModel.findOne({email});
+
+        if (!user) {
+            return res.status(404).json({success: false, message: "User not found."});
+        }
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const expiresAt = new Date(Date.now() + 1 * 60 * 1000);
+
+        await PasswordResetModel.deleteMany({email});
+        await PasswordResetModel.create({email, otp, expiresAt});
+
+        await sendEmail(email, "Your Password Reset OTP", getOTPMailTemplate(otp, user.firstName));
+
+        res.status(200).json({success: true, message: "OTP sent to email."});
+    } catch (err) {
+        console.error("OTP Error:", err);
+        res.status(500).json({success: false, message: "Server error."});
+    }
+};
+
+// Verify OTP + Reset Password
+const verifyOTPAndSetPassword = async (req, res) => {
+    try {
+        const {email, otp, newPassword} = req.body;
+
+        const record = await PasswordResetModel.findOne({email, otp});
+        if (!record || record.expiresAt < new Date()) {
+            return res.status(400).json({success: false, message: "Invalid or expired OTP."});
+        }
+
+        const user = await UserModel.findOne({email});
+        if (!user) {
+            return res.status(404).json({success: false, message: "User not found."});
+        }
+
+        user.password = await createHash(newPassword);
+        await user.save();
+        await PasswordResetModel.deleteOne({_id: record._id});
+
+        res.status(200).json({success: true, message: "Password reset successful."});
+    } catch (err) {
+        console.error("Verify OTP Error:", err);
+        res.status(500).json({success: false, message: "Server error."});
+    }
+};
+
 module.exports = {
     register,
     login,
     resetPassword,
     getUser,
+    sendResetOTP,
+    verifyOTPAndSetPassword,
 };
