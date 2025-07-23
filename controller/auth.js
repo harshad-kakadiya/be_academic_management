@@ -235,7 +235,6 @@ const getUser = async (req, res) => {
         const user = await UserModel.findById(userId)
             .select("-password")
             .populate("branch")
-            .populate("company");
 
         if (!user) {
             return res.status(404).json({

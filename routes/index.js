@@ -11,12 +11,14 @@ const feesRouter = require("../routes/fees")
 const complainRouter = require("../routes/complain")
 const batchRouter = require("../routes/batch")
 const calendarRouter = require("../routes/calendar")
+const configRouter = require("../routes/config")
 
 const auth = require("../middlewares/auth");
 
 router.use("/auth", authRouter);
 router.use("/company", auth, userRouter);
 router.use("/company", auth, employeeRouter);
+router.use("/company", auth, configRouter);
 router.use("/company", auth, companyRouter);
 router.use("/company", auth, studentRouter);
 router.use("/company", auth, examRouter);
