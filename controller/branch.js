@@ -200,7 +200,7 @@ const updateBranch = async (req, res) => {
 const deleteBranch = async (req, res) => {
     try {
         const {companyId, branchId} = req.params;
-        const deletedBy = req.user?._id;
+        const {deletedBy} = req.body;
 
         const company = await validateCompany(companyId, res);
         if (!company) return;

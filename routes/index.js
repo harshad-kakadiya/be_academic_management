@@ -12,6 +12,7 @@ const complainRouter = require("../routes/complain")
 const batchRouter = require("../routes/batch")
 const calendarRouter = require("../routes/calendar")
 const configRouter = require("../routes/config")
+const branchRouter = require("../routes/branch")
 
 const auth = require("../middlewares/auth");
 
@@ -26,5 +27,6 @@ router.use("/company", auth, feesRouter);
 router.use("/company", auth, complainRouter);
 router.use("/company", auth, batchRouter);
 router.use("/company", auth, calendarRouter);
+router.use("/company", auth, branchRouter);
 
 module.exports = router;
