@@ -7,15 +7,18 @@ const configSchema = new mongoose.Schema(
             ref: 'Company',
             required: true,
         },
-        expenseType: {
+        roles: {
             type: Array,
             default: [],
         },
-        incomeType: {
+        permission: {
             type: Array,
             default: [],
         },
-        permissions: {type: Object, default: {}},
+        area: {
+            type: Array,
+            default: [],
+        },
     },
     {
         timestamps: true,

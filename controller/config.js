@@ -1,6 +1,16 @@
 const ConfigModel = require("../models/config");
 const {validateCompany} = require("../helpers/validators");
 
+// Standard response utility
+const sendResponse = (res, status, success, message, data = null) => {
+    return res.status(status).json({
+        status,
+        success,
+        message,
+        ...(data !== null && {data}),
+    });
+};
+
 // GET configs by company ID
 async function getConfigs(req, res) {
     try {
@@ -12,25 +22,13 @@ async function getConfigs(req, res) {
         const configs = await ConfigModel.find({company: companyId}).populate("company");
 
         if (!configs.length) {
-            return res.status(404).json({
-                status: 404,
-                success: false,
-                message: "No configurations found for this company",
-            });
+            return sendResponse(res, 404, false, "No configurations found for this company");
         }
 
-        return res.status(200).json({
-            status: 200,
-            success: true,
-            data: configs,
-        });
+        return sendResponse(res, 200, true, "Configurations retrieved successfully", configs);
     } catch (err) {
         console.error("Error fetching configs:", err);
-        return res.status(500).json({
-            status: 500,
-            success: false,
-            message: "Internal server error",
-        });
+        return sendResponse(res, 500, false, "Internal server error");
     }
 }
 
@@ -45,32 +43,17 @@ async function updateConfig(req, res) {
 
         const config = await ConfigModel.findOne({_id: id, company: companyId});
         if (!config) {
-            return res.status(404).json({
-                status: 404,
-                success: false,
-                message: "Configuration not found for this company",
-            });
+            return sendResponse(res, 404, false, "Configuration not found for this company");
         }
 
-        const updatedConfig = await ConfigModel.findByIdAndUpdate(
-            id,
-            updates,
-            {new: true}
-        ).populate("company");
+        const updatedConfig = await ConfigModel.findByIdAndUpdate(id, updates, {
+            new: true,
+        }).populate("company");
 
-        return res.status(200).json({
-            status: 200,
-            success: true,
-            data: updatedConfig,
-            message: "Config updated successfully",
-        });
+        return sendResponse(res, 200, true, "Configuration updated successfully", updatedConfig);
     } catch (err) {
         console.error("Error updating config:", err);
-        return res.status(500).json({
-            status: 500,
-            success: false,
-            message: "Internal server error",
-        });
+        return sendResponse(res, 500, false, "Internal server error");
     }
 }
 
