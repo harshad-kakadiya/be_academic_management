@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const StudentModel = require("../models/student");
 const UserModel = require("../models/user");
 const {validateCompany, validateBranch} = require("../helpers/validators");
@@ -255,6 +256,14 @@ const deleteStudent = async (req, res) => {
         const company = await validateCompany(companyId, res);
         if (!company) return;
 
+        if (!deletedBy) {
+            return sendError(res, 400, 'deletedBy is required');
+        }
+
+        if (!mongoose.Types.ObjectId.isValid(deletedBy)) {
+            return sendError(res, 400, 'deletedBy must be a valid user ID');
+        }
+
         const deleted = await StudentModel.findOneAndUpdate(
             {_id: studentId, company: companyId, deletedAt: null},
             {deletedAt: new Date(), deletedBy},
@@ -262,17 +271,17 @@ const deleteStudent = async (req, res) => {
         );
 
         if (!deleted) {
-            return sendError(res, 404, "Student not found or already deleted");
+            return sendError(res, 404, 'Student not found or already deleted');
         }
 
         return res.status(200).json({
             status: 200,
             success: true,
-            message: "Student deleted successfully",
+            message: 'Student deleted successfully',
         });
     } catch (err) {
-        console.error("Error deleting student:", err);
-        return sendError(res, 500, "Internal server error. Failed to delete student.");
+        console.error('Error deleting student:', err);
+        return sendError(res, 500, 'Internal server error. Failed to delete student.');
     }
 };
 
