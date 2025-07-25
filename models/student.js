@@ -3,6 +3,11 @@ const {addressSchema} = require("./common/address");
 
 const studentSchema = new mongoose.Schema(
     {
+        enrollmentNumber: {
+            type: String,
+            required: true,
+            unique: true,
+        },
         firstName: {
             type: String,
             required: true,
@@ -27,8 +32,8 @@ const studentSchema = new mongoose.Schema(
         },
         guardianInfo: [
             {
-                name: {type: String, required: true},
-                contact: {type: String, required: true},
+                name: {type: String},
+                contact: {type: String},
                 relation: {type: String},
             }
         ],
@@ -67,14 +72,17 @@ const studentSchema = new mongoose.Schema(
         company: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Company',
+            required: true,
         },
         branch: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Branch',
+            required: true,
         },
         createdBy: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User',
+            required: true,
         },
         deletedAt: {
             type: Date,
@@ -84,6 +92,7 @@ const studentSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User',
             default: null,
+            required: true,
         },
     },
     {
