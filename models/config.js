@@ -19,6 +19,10 @@ const configSchema = new mongoose.Schema(
             type: Array,
             default: [],
         },
+        standard: {
+            type: Array,
+            default: [],
+        },
     },
     {
         timestamps: true,
