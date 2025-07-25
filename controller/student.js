@@ -5,6 +5,7 @@ const generateUniqueUsername = require("../helpers/generateUsername");
 const {createHash} = require("../helpers/hash");
 const {uploadFile} = require("../services/uploadfile");
 const {ROLES} = require("../constant");
+const generateEnrollmentNumber = require("../helpers/generateEnrollmentNumber");
 
 // Unified error response helper
 const sendError = (res, status, message) => {
@@ -51,6 +52,12 @@ const createStudent = async (req, res) => {
         const userName = await generateUniqueUsername(company.name, firstName, lastName);
         const hashedPassword = await createHash(contact);
 
+        let studentImage = null;
+        if (req.file) {
+            const buffer = req.file.buffer;
+            studentImage = await uploadFile(buffer);
+        }
+
         const newUser = await UserModel.create({
             firstName,
             lastName,
@@ -61,13 +68,8 @@ const createStudent = async (req, res) => {
             role: ROLES.STUDENT,
             company: companyId,
             branch,
+            userImage: studentImage,
         });
-
-        let studentImage = null;
-        if (req.file) {
-            const buffer = req.file.buffer;
-            studentImage = await uploadFile(buffer);
-        }
 
         const newStudent = await StudentModel.create({
             enrollmentNumber,
