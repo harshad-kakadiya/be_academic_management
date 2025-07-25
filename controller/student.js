@@ -35,12 +35,11 @@ const createStudent = async (req, res) => {
             totalFee,
             discount,
             branch,
-            password,
             createdBy,
         } = req.body;
 
-        if (!password || password.length < 6) {
-            return sendError(res, 400, "Password must be at least 6 characters long.");
+        if (!contact || contact.length < 6) {
+            return sendError(res, 400, "Contact number must be at least 6 digits long to use as password.");
         }
 
         if (branch) {
@@ -48,8 +47,9 @@ const createStudent = async (req, res) => {
             if (!isValidBranch) return;
         }
 
+        const enrollmentNumber = await generateEnrollmentNumber(companyId, branch);
         const userName = await generateUniqueUsername(company.name, firstName, lastName);
-        const hashedPassword = await createHash(password);
+        const hashedPassword = await createHash(contact);
 
         const newUser = await UserModel.create({
             firstName,
@@ -70,6 +70,7 @@ const createStudent = async (req, res) => {
         }
 
         const newStudent = await StudentModel.create({
+            enrollmentNumber,
             firstName,
             lastName,
             userName: newUser.userName,
@@ -92,7 +93,6 @@ const createStudent = async (req, res) => {
             createdBy,
         });
 
-        // Sync profile image with user model (optional)
         if (studentImage) {
             await UserModel.findByIdAndUpdate(newUser._id, {
                 profileImage: studentImage,
@@ -193,6 +193,10 @@ const updateStudent = async (req, res) => {
         }
 
         const updateData = {...req.body};
+
+        if ("enrollmentNumber" in updateData) {
+            delete updateData.enrollmentNumber;
+        }
 
         if (updateData.branch) {
             const isValidBranch = await validateBranch(updateData.branch, companyId, res);

@@ -6,7 +6,7 @@ const generateEnrollmentNumber = async (companyId, branchId) => {
 
     const branch = await BranchModel.findOne({_id: branchId, company: companyId});
     if (!branch || !branch.branchCode) {
-        throw new Error("Branch code not found");
+        throw new Error("Branch code not found for enrollment number generation.");
     }
 
     const branchCode = branch.branchCode.toUpperCase();
