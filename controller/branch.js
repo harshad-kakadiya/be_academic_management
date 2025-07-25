@@ -25,7 +25,8 @@ const createBranch = async (req, res) => {
             address,
             date,
             isActive = true,
-            createdBy
+            createdBy,
+            branchCode,
         } = req.body;
 
         const validationError = validateBranchInput(req.body);
@@ -46,6 +47,15 @@ const createBranch = async (req, res) => {
             });
         }
 
+        const existingCode = await BranchModel.findOne({branchCode, company: companyId, deletedAt: null});
+        if (existingCode) {
+            return res.status(409).json({
+                status: 409,
+                success: false,
+                message: "Branch with this branchCode already exists."
+            });
+        }
+
         let branchImage = null;
         if (req.file) {
             branchImage = await uploadFile(req.file.buffer);
@@ -60,7 +70,8 @@ const createBranch = async (req, res) => {
             isActive,
             company: companyId,
             branchImage,
-            createdBy
+            createdBy,
+            branchCode,
         });
 
         return res.status(201).json({
@@ -144,7 +155,8 @@ const updateBranch = async (req, res) => {
         const company = await validateCompany(companyId, res);
         if (!company) return;
 
-        const updateData = {...req.body};
+        const {branchCode, ...rest} = req.body;
+        const updateData = {...rest};
 
         if (req.file) {
             updateData.branchImage = await uploadFile(req.file.buffer);

@@ -7,6 +7,11 @@ const branchSchema = new mongoose.Schema(
             type: String,
             required: true,
         },
+        branchCode: {
+            type: String,
+            required: true,
+            unique: true,
+        },
         contact: {
             type: String,
         },
