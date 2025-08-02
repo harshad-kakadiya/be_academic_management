@@ -273,7 +273,7 @@ const sendResetOTP = async (req, res) => {
         await PasswordResetModel.deleteMany({email});
         await PasswordResetModel.create({email, otp, expiresAt});
 
-        await sendEmail(email, "Your Password Reset OTP", getOTPMailTemplate(otp, user.firstName));
+        await sendEmail(email, "Your Password Reset OTP", getOTPMailTemplate(otp, user));
 
         res.status(200).json({success: true, message: "OTP sent to email."});
     } catch (err) {

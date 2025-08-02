@@ -7,13 +7,13 @@ const {createHash} = require("../helpers/hash");
 const {uploadFile} = require("../services/uploadfile");
 const {ROLES} = require("../constant");
 const generateEnrollmentNumber = require("../helpers/generateEnrollmentNumber");
+const xlsx = require("xlsx");
 
-// Unified error response helper
 const sendError = (res, status, message) => {
     return res.status(status).json({status, success: false, message});
 };
 
-// CREATE STUDENT (with user)
+// CREATE STUDENT
 const createStudent = async (req, res) => {
     try {
         const {companyId} = req.params;
@@ -36,6 +36,7 @@ const createStudent = async (req, res) => {
             reference,
             totalFee,
             discount,
+            amountPaid,
             branch,
             createdBy,
         } = req.body;
@@ -91,9 +92,11 @@ const createStudent = async (req, res) => {
             studentImage,
             totalFee,
             discount,
+            amountPaid,
             company: companyId,
             branch,
             createdBy,
+            user: newUser._id,
         });
 
         if (studentImage) {
@@ -247,7 +250,7 @@ const updateStudent = async (req, res) => {
     }
 };
 
-// DELETE (SOFT DELETE) STUDENT
+// DELETE STUDENT (SOFT)
 const deleteStudent = async (req, res) => {
     try {
         const {companyId, studentId} = req.params;
@@ -285,10 +288,207 @@ const deleteStudent = async (req, res) => {
     }
 };
 
+// BULK STUDENT UPLOAD
+const bulkUploadStudents = async (req, res) => {
+    try {
+        const {companyId} = req.params;
+        const {createdBy, branch} = req.body;
+
+        const company = await validateCompany(companyId, res);
+        if (!company) return;
+
+        if (!req.file) {
+            return sendError(res, 400, "Excel file is required");
+        }
+
+        const workbook = xlsx.read(req.file.buffer, {type: "buffer"});
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows = xlsx.utils.sheet_to_json(sheet);
+
+        const successList = [];
+        const errorList = [];
+
+        for (const [index, row] of rows.entries()) {
+            try {
+                const {
+                    firstName,
+                    lastName,
+                    contact,
+                    email,
+                    dob,
+                    schoolName,
+                    std,
+                    medium,
+                    lastExamPercentage,
+                    joinDate,
+                    guardianName,
+                    guardianContact,
+                    guardianRelation,
+                    referenceName,
+                    referenceContact,
+                    referenceRelation,
+                    totalFee,
+                    discount,
+                    amountPaid,
+                    street,
+                    landmark,
+                    country,
+                    state,
+                    city,
+                    zipcode,
+                    area,
+                } = row;
+
+                if (!firstName || !lastName || !contact || !totalFee) {
+                    errorList.push({row: index + 2, error: "Missing required fields"});
+                    continue;
+                }
+
+                const userName = await generateUniqueUsername(company.name, firstName, lastName);
+                const enrollmentNumber = await generateEnrollmentNumber(companyId, branch);
+                const hashedPassword = await createHash(contact);
+
+                const newUser = await UserModel.create({
+                    firstName,
+                    lastName,
+                    userName,
+                    email,
+                    contact,
+                    password: hashedPassword,
+                    role: ROLES.STUDENT,
+                    company: companyId,
+                    branch,
+                });
+
+                const newStudent = await StudentModel.create({
+                    enrollmentNumber,
+                    firstName,
+                    lastName,
+                    userName: newUser.userName,
+                    email,
+                    contact,
+                    dob: dob ? new Date(dob) : null,
+                    schoolName,
+                    std,
+                    medium,
+                    lastExamPercentage,
+                    joinDate: joinDate ? new Date(joinDate) : null,
+                    guardianInfo: guardianName
+                        ? [{
+                            name: guardianName,
+                            contact: guardianContact,
+                            relation: guardianRelation,
+                        }]
+                        : [],
+                    reference: referenceName
+                        ? {
+                            name: referenceName,
+                            contact: referenceContact,
+                            relation: referenceRelation,
+                        }
+                        : {},
+                    address: {
+                        street: street || '',
+                        landmark: landmark || '',
+                        country: country || '',
+                        state: state || '',
+                        city: city || '',
+                        zipcode: zipcode || '',
+                        area: area || null,
+                    },
+                    totalFee,
+                    discount: discount || 0,
+                    amountPaid: amountPaid || 0,
+                    company: companyId,
+                    branch,
+                    createdBy,
+                    user: newUser._id
+                });
+
+                successList.push({student: newStudent, user: newUser});
+
+            } catch (err) {
+                console.error(`Row ${index + 2} error:`, err);
+                errorList.push({row: index + 2, error: err.message});
+            }
+        }
+
+        return res.status(201).json({
+            status: 201,
+            success: true,
+            message: "Bulk upload completed",
+            created: successList.length,
+            failed: errorList.length,
+            errors: errorList,
+        });
+
+    } catch (err) {
+        console.error("Bulk upload error:", err);
+        return sendError(res, 500, "Internal server error during bulk student upload");
+    }
+};
+
+// ADD REMARK TO STUDENT
+const addStudentRemark = async (req, res) => {
+    try {
+        const {companyId, studentId} = req.params;
+        const {comment, addedBy} = req.body;
+
+        const company = await validateCompany(companyId, res);
+        if (!company) return;
+
+        if (!mongoose.Types.ObjectId.isValid(studentId)) {
+            return sendError(res, 400, "Invalid student ID");
+        }
+
+        if (!comment || !addedBy) {
+            return sendError(res, 400, "Both 'comment' and 'addedBy' are required");
+        }
+
+        if (!mongoose.Types.ObjectId.isValid(addedBy)) {
+            return sendError(res, 400, "Invalid user ID in 'addedBy'");
+        }
+
+        const student = await StudentModel.findOneAndUpdate(
+            {
+                _id: studentId,
+                company: companyId,
+                deletedAt: null,
+            },
+            {
+                $push: {
+                    remarks: {
+                        comment,
+                        addedBy,
+                        date: new Date(),
+                    },
+                },
+            },
+            {new: true}
+        ).populate('remarks.addedBy', 'firstName lastName userName');
+
+        if (!student) {
+            return sendError(res, 404, "Student not found");
+        }
+
+        return res.status(200).json({
+            status: 200,
+            success: true,
+            message: "Remark added successfully",
+            data: student,
+        });
+    } catch (err) {
+        console.error("Error adding remark:", err);
+        return sendError(res, 500, "Internal server error. Failed to add remark.");
+    }
+};
+
 module.exports = {
     createStudent,
     getAllStudents,
     getSingleStudent,
     updateStudent,
     deleteStudent,
+    bulkUploadStudents,
+    addStudentRemark,
 };

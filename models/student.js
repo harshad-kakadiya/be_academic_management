@@ -69,6 +69,20 @@ const studentSchema = new mongoose.Schema(
             type: Number,
             default: 0,
         },
+        amountPaid: {
+            type: Number,
+            default: 0,
+        },
+        remarks: [
+            {
+                comment: {type: String},
+                date: {type: Date, default: Date.now},
+                addedBy: {
+                    type: mongoose.Schema.Types.ObjectId,
+                    ref: 'User',
+                },
+            }
+        ],
         company: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Company',
@@ -77,6 +91,11 @@ const studentSchema = new mongoose.Schema(
         branch: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Branch',
+            required: true,
+        },
+        user: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
             required: true,
         },
         createdBy: {

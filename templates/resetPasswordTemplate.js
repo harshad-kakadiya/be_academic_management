@@ -1,4 +1,4 @@
-const getOTPMailTemplate = (otp, userName = "User") => {
+const getOTPMailTemplate = (otp, user = "User",) => {
     return `
   <!DOCTYPE html>
   <html lang="en">
@@ -19,7 +19,7 @@ const getOTPMailTemplate = (otp, userName = "User") => {
             </tr>
             <tr>
               <td style="padding:30px;">
-                <h3 style="margin-top:0;">Hello ${userName},</h3>
+                <h3 style="margin-top:0;">Hello ${user?.firstName}(${user.userName}),</h3>
                 <p style="font-size:15px;">You recently requested to reset your password.</p>
                 <p style="font-size:15px;">Please use the OTP below to proceed with resetting your password:</p>
                 <div style="margin:30px 0; text-align:center;">
