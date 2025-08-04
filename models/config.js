@@ -11,10 +11,7 @@ const configSchema = new mongoose.Schema(
             type: Array,
             default: [],
         },
-        permission: {
-            type: Array,
-            default: [],
-        },
+        permissions: {type: Object},
         area: {
             type: Array,
             default: [],

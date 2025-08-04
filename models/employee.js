@@ -31,6 +31,9 @@ const employeeSchema = new mongoose.Schema(
         joinDate: {
             type: Date,
         },
+        dob: {
+            type: Date,
+        },
         subjects: {
             type: String,
         },

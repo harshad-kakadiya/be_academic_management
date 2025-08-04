@@ -22,7 +22,7 @@ const createEmployee = async (req, res) => {
             firstName, lastName, email, contact,
             education, salary, joinDate, subjects,
             timeAvailable, guardianInfo, address,
-            branch, password, createdBy, subRole
+            branch, password, createdBy, subRole, dob
         } = req.body;
 
         if (!password || password.length < 6) {
@@ -48,6 +48,7 @@ const createEmployee = async (req, res) => {
             role: ROLES.EMPLOYEE,
             company: companyId,
             branch,
+            subRole: subRole,
         });
 
         let employeeImage = null;
@@ -75,6 +76,7 @@ const createEmployee = async (req, res) => {
             branch,
             subRole,
             createdBy,
+            dob
         });
 
         return res.status(201).json({
@@ -194,6 +196,7 @@ const updateEmployee = async (req, res) => {
         if (updateData.email) userUpdateData.email = updateData.email;
         if (updateData.contact) userUpdateData.contact = updateData.contact;
         if (updateData.branch) userUpdateData.branch = updateData.branch;
+        if (updateData.subRole) userUpdateData.subRole = updateData.subRole;
         if (uploadedImageUrl) userUpdateData.userImage = uploadedImageUrl;
 
         await UserModel.findByIdAndUpdate(employee.user, userUpdateData);

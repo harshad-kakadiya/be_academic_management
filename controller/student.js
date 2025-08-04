@@ -71,6 +71,7 @@ const createStudent = async (req, res) => {
             company: companyId,
             branch,
             userImage: studentImage,
+            subRole: ROLES.STUDENT
         });
 
         const newStudent = await StudentModel.create({
