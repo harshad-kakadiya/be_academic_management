@@ -32,10 +32,12 @@ const branchSchema = new mongoose.Schema(
         company: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Company',
+            required: true,
         },
         createdBy: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User',
+            required: true,
         },
         deletedAt: {
             type: Date,

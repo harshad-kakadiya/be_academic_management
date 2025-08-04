@@ -16,9 +16,6 @@ const userSchema = new mongoose.Schema(
             required: true,
             unique: true,
         },
-        email: {
-            type: String,
-        },
         contact: {
             type: String,
             required: true,
@@ -35,10 +32,15 @@ const userSchema = new mongoose.Schema(
         subRole: {
             type: String,
             default: null,
+            required: true,
+        },
+        email: {
+            type: String,
         },
         company: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Company',
+            required: true,
         },
         branch: {
             type: mongoose.Schema.Types.ObjectId,

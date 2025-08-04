@@ -15,12 +15,12 @@ const employeeSchema = new mongoose.Schema(
             type: String,
             required: true,
         },
-        email: {
-            type: String,
-        },
         contact: {
             type: String,
             required: true,
+        },
+        email: {
+            type: String,
         },
         education: {
             type: String,
@@ -42,8 +42,8 @@ const employeeSchema = new mongoose.Schema(
         },
         guardianInfo: [
             {
-                name: {type: String, required: true},
-                contact: {type: String, required: true},
+                name: {type: String},
+                contact: {type: String},
                 relation: {type: String},
             }
         ],
@@ -63,10 +63,12 @@ const employeeSchema = new mongoose.Schema(
         company: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Company',
+            required: true,
         },
         branch: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Branch',
+            required: true,
         },
         isActive: {
             type: Boolean,
@@ -75,6 +77,7 @@ const employeeSchema = new mongoose.Schema(
         createdBy: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User',
+            required: true,
         },
         deletedAt: {
             type: Date,
