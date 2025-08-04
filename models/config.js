@@ -7,7 +7,7 @@ const configSchema = new mongoose.Schema(
             ref: 'Company',
             required: true,
         },
-        roles: {
+        employeeRoles: {
             type: Array,
             default: [],
         },

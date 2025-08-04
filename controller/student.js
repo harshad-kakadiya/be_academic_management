@@ -254,7 +254,7 @@ const updateStudent = async (req, res) => {
 const deleteStudent = async (req, res) => {
     try {
         const {companyId, studentId} = req.params;
-        const {deletedBy} = req.body;
+        const deletedBy = req.body.deletedBy;
 
         const company = await validateCompany(companyId, res);
         if (!company) return;

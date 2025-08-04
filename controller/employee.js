@@ -22,7 +22,7 @@ const createEmployee = async (req, res) => {
             firstName, lastName, email, contact,
             education, salary, joinDate, subjects,
             timeAvailable, guardianInfo, address,
-            branch, password, createdBy,
+            branch, password, createdBy, subRole
         } = req.body;
 
         if (!password || password.length < 6) {
@@ -60,6 +60,7 @@ const createEmployee = async (req, res) => {
             firstName,
             lastName,
             email,
+            userName,
             contact,
             education,
             salary,
@@ -72,6 +73,7 @@ const createEmployee = async (req, res) => {
             user: newUser._id,
             company: companyId,
             branch,
+            subRole,
             createdBy,
         });
 
@@ -212,7 +214,12 @@ const updateEmployee = async (req, res) => {
 const deleteEmployee = async (req, res) => {
     try {
         const {companyId, employeeId} = req.params;
-        const deletedBy = req.user?._id;
+
+        if (!req.user || !req.body.deletedBy) {
+            return sendError(res, 401, "Unauthorized. User info missing.");
+        }
+
+        const deletedBy = req.body.deletedBy;
 
         const company = await validateCompany(companyId, res);
         if (!company) return;
