@@ -7,6 +7,7 @@ const {
     getSingleBatch,
     updateBatch,
     deleteBatch,
+    addStudentToBatch,
 } = require("../controller/batch");
 
 
@@ -15,5 +16,6 @@ router.get("/:companyId/batch", getAllBatches);
 router.get("/:companyId/batch/:batchId", getSingleBatch);
 router.put("/:companyId/batch/:batchId", updateBatch);
 router.delete("/:companyId/batch/:batchId", deleteBatch);
+router.put("/:companyId/batch/:batchId/add-student", addStudentToBatch);
 
 module.exports = router;

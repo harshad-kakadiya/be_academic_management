@@ -20,6 +20,7 @@ const createBatch = async (req, res) => {
             batchTime,
             students = [],
             branch,
+            standard,
             createdBy,
         } = req.body;
 
@@ -39,6 +40,7 @@ const createBatch = async (req, res) => {
             students,
             company: companyId,
             branch,
+            standard,
             createdBy,
         });
 
@@ -163,7 +165,7 @@ const updateBatch = async (req, res) => {
 const deleteBatch = async (req, res) => {
     try {
         const {companyId, batchId} = req.params;
-        const deletedBy = req.user?._id;
+        const deletedBy = req.body.deletedBy;
 
         const company = await validateCompany(companyId, res);
         if (!company) return;
@@ -189,10 +191,57 @@ const deleteBatch = async (req, res) => {
     }
 };
 
+// ADD STUDENT TO BATCH
+const addStudentToBatch = async (req, res) => {
+    try {
+        const {companyId, batchId} = req.params;
+        const {studentId} = req.body;
+
+        const company = await validateCompany(companyId, res);
+        if (!company) return;
+
+        const batch = await BatchModel.findOne({
+            _id: batchId,
+            company: companyId,
+            deletedAt: null,
+        });
+
+        if (!batch) {
+            return sendError(res, 404, "Batch not found");
+        }
+
+        const student = await StudentModel.findOne({
+            _id: studentId,
+            company: companyId,
+            deletedAt: null,
+        });
+
+        if (!student) {
+            return sendError(res, 404, "Student not found");
+        }
+
+        if (!batch.students.includes(studentId)) {
+            batch.students.push(studentId);
+            await batch.save();
+        }
+
+        return res.status(200).json({
+            status: 200,
+            success: true,
+            message: "Student added to batch successfully",
+            data: batch,
+        });
+    } catch (err) {
+        console.error("Error adding student to batch:", err);
+        return sendError(res, 500, "Internal server error. Failed to add student to batch.");
+    }
+};
+
 module.exports = {
     createBatch,
     getAllBatches,
     getSingleBatch,
     updateBatch,
     deleteBatch,
+    addStudentToBatch
 };

@@ -19,6 +19,7 @@ const companySchema = new mongoose.Schema(
         date: {
             type: Date,
         },
+        address: {type: String},
         deletedAt: {
             type: Date,
             default: null,

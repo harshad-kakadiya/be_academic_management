@@ -13,10 +13,16 @@ const batchSchema = new mongoose.Schema(
             type: String,
             required: true,
         },
-        students: [{
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'Student',
-        }],
+        standard: {
+            type: String,
+            required: true,
+        },
+        students: [
+            {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'Student',
+            },
+        ],
         isActive: {
             type: Boolean,
             default: true,
@@ -29,6 +35,7 @@ const batchSchema = new mongoose.Schema(
         branch: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Branch',
+            required: true,
         },
         createdBy: {
             type: mongoose.Schema.Types.ObjectId,
