@@ -32,7 +32,6 @@ const userSchema = new mongoose.Schema(
         subRole: {
             type: String,
             default: null,
-            required: true,
         },
         email: {
             type: String,

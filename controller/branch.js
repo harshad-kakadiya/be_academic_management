@@ -4,7 +4,7 @@ const {uploadFile} = require("../services/uploadfile");
 
 // Manual field validator
 const validateBranchInput = (body, isUpdate = false) => {
-    const requiredFields = ["name", "contact", "email", "address", "date"];
+    const requiredFields = ["name", 'branchCode'];
     for (const field of requiredFields) {
         if (!isUpdate && !body[field]) return `${field} is required.`;
     }
