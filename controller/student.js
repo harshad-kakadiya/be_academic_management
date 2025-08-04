@@ -41,14 +41,27 @@ const createStudent = async (req, res) => {
             createdBy,
         } = req.body;
 
-        if (!contact || contact.length < 6) {
+        const requiredFields = [
+            {key: 'firstName', label: 'First name'},
+            {key: 'lastName', label: 'Last name'},
+            {key: 'contact', label: 'Contact'},
+            {key: 'totalFee', label: 'Total fee'},
+            {key: 'branch', label: 'Branch'},
+            {key: 'createdBy', label: 'Created by'},
+        ];
+
+        for (const field of requiredFields) {
+            if (!req.body[field.key]) {
+                return sendError(res, 400, `${field.label} is required`);
+            }
+        }
+
+        if (contact.length < 6) {
             return sendError(res, 400, "Contact number must be at least 6 digits long to use as password.");
         }
 
-        if (branch) {
-            const isValidBranch = await validateBranch(branch, companyId, res);
-            if (!isValidBranch) return;
-        }
+        const isValidBranch = await validateBranch(branch, companyId, res);
+        if (!isValidBranch) return;
 
         const enrollmentNumber = await generateEnrollmentNumber(companyId, branch);
         const userName = await generateUniqueUsername(company.name, firstName, lastName);
@@ -71,7 +84,7 @@ const createStudent = async (req, res) => {
             company: companyId,
             branch,
             userImage: studentImage,
-            subRole: ROLES.STUDENT
+            subRole: ROLES.STUDENT,
         });
 
         const newStudent = await StudentModel.create({
@@ -340,8 +353,16 @@ const bulkUploadStudents = async (req, res) => {
                     area,
                 } = row;
 
-                if (!firstName || !lastName || !contact || !totalFee) {
-                    errorList.push({row: index + 2, error: "Missing required fields"});
+                const requiredFields = [
+                    {key: 'firstName', label: 'First name'},
+                    {key: 'lastName', label: 'Last name'},
+                    {key: 'contact', label: 'Contact'},
+                    {key: 'totalFee', label: 'Total fee'},
+                ];
+
+                const missingField = requiredFields.find(f => !row[f.key]);
+                if (missingField) {
+                    errorList.push({row: index + 2, error: `${missingField.label} is required`});
                     continue;
                 }
 
@@ -403,7 +424,7 @@ const bulkUploadStudents = async (req, res) => {
                     company: companyId,
                     branch,
                     createdBy,
-                    user: newUser._id
+                    user: newUser._id,
                 });
 
                 successList.push({student: newStudent, user: newUser});

@@ -5,7 +5,15 @@ const {createHash} = require("../helpers/hash");
 
 // Manual field validation function
 const validateUserInput = (body, isUpdate = false) => {
-    const requiredFields = ["firstName", "lastName", "userName", "email", "contact", "password", "role"];
+    const requiredFields = [
+        "firstName",
+        "lastName",
+        "userName",
+        "email",
+        "contact",
+        "password",
+        "role",
+    ];
     for (const field of requiredFields) {
         if (!isUpdate && !body[field]) {
             return `${field} is required`;
@@ -29,6 +37,7 @@ const createUser = async (req, res) => {
             contact,
             password,
             role,
+            subRole,
             branch,
             otherInfo
         } = req.body;
@@ -70,6 +79,7 @@ const createUser = async (req, res) => {
             contact,
             password: hashedPassword,
             role,
+            subRole,
             company: companyId,
             branch,
             userImage,

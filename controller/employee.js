@@ -25,11 +25,25 @@ const createEmployee = async (req, res) => {
             branch, password, createdBy, subRole, dob
         } = req.body;
 
-        if (!password || password.length < 6) {
+        const requiredFields = [
+            {key: 'firstName', label: 'First name'},
+            {key: 'lastName', label: 'Last name'},
+            {key: 'contact', label: 'Contact'},
+            {key: 'password', label: 'Password'},
+            {key: 'createdBy', label: 'Created by'},
+            {key: 'subRole', label: 'Sub role'}
+        ];
+
+        for (const field of requiredFields) {
+            if (!req.body[field.key]) {
+                return sendError(res, 400, `${field.label} is required.`);
+            }
+        }
+
+        if (password.length < 6) {
             return sendError(res, 400, "Password must be at least 6 characters long.");
         }
 
-        // Optional branch validation
         if (branch) {
             const isValidBranch = await validateBranch(branch, companyId, res);
             if (!isValidBranch) return;
@@ -48,7 +62,7 @@ const createEmployee = async (req, res) => {
             role: ROLES.EMPLOYEE,
             company: companyId,
             branch,
-            subRole: subRole,
+            subRole,
         });
 
         let employeeImage = null;
@@ -76,7 +90,7 @@ const createEmployee = async (req, res) => {
             branch,
             subRole,
             createdBy,
-            dob
+            dob,
         });
 
         return res.status(201).json({
