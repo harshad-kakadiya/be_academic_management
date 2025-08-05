@@ -40,6 +40,9 @@ const feesSchema = new mongoose.Schema(
             type: String,
             unique: true,
         },
+        attachment: {
+            type: String,
+        },
         description: {
             type: String,
         },
