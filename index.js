@@ -15,10 +15,7 @@ const PORT = process.env.PORT || 8080;
 
 connectionDB();
 
-app.use(cors({
-    origin: '*',
-    credentials: true,
-}));
+app.use(cors());
 
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms'));
 app.use(helmet());
