@@ -1,4 +1,4 @@
-const RequestLog = require("../models/RequestLog");
+const RequestLog = require("../models/requestLog");
 
 const requestLogger = async (req, res, next) => {
     const startTime = Date.now();

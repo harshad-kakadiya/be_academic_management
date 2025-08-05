@@ -11,10 +11,12 @@ const feesSchema = new mongoose.Schema(
         company: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Company',
+            required: true,
         },
         branch: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Branch',
+            required: true,
         },
         feeType: {
             type: String,
