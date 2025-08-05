@@ -167,7 +167,7 @@ const updateComplain = async (req, res) => {
 const deleteComplain = async (req, res) => {
     try {
         const {companyId, complainId} = req.params;
-        const deletedBy = req.user?._id;
+        const deletedBy = req.body?.deletedBy;
 
         const company = await validateCompany(companyId, res);
         if (!company) return;

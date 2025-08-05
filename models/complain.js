@@ -9,7 +9,6 @@ const complainSchema = new mongoose.Schema(
         },
         description: {
             type: String,
-            required: true,
         },
         complainType: {
             type: String,
@@ -27,14 +26,17 @@ const complainSchema = new mongoose.Schema(
         company: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Company',
+            required: true,
         },
         branch: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Branch',
+            required: true,
         },
         createdBy: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User',
+            required: true,
         },
         deletedAt: {
             type: Date,
