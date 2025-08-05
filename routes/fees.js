@@ -9,10 +9,12 @@ const {
     deleteFee,
 } = require("../controller/fees");
 
-router.post("/:companyId/fee", createFee);
+const upload = require("../middlewares/upload");
+
+router.post("/:companyId/fee", upload.single("attachment"), createFee);
 router.get("/:companyId/fee", getAllFees);
 router.get("/:companyId/fee/:feeId", getSingleFee);
-router.put("/:companyId/fee/:feeId", updateFee);
+router.put("/:companyId/fee/:feeId", upload.single("attachment"), updateFee);
 router.delete("/:companyId/fee/:feeId", deleteFee);
 
 module.exports = router;

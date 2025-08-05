@@ -1,9 +1,16 @@
 const FeesModel = require("../models/fees");
+const StudentModel = require("../models/student"); // Import Student model
 const {validateCompany, validateBranch} = require("../helpers/validators");
-const {FEETYPE, PAYMENT_STATUS, PAYMENT_MODE} = require("../constant");
+const {uploadFile} = require("../services/uploadfile");
 
 const sendError = (res, status, message) => {
     return res.status(status).json({status, success: false, message});
+};
+
+// Helper to parse amount to number safely
+const toNumber = (val) => {
+    const n = Number(val);
+    return Number.isFinite(n) ? n : 0;
 };
 
 // CREATE FEE
@@ -14,20 +21,7 @@ const createFee = async (req, res) => {
         if (!company) return;
 
         const {
-            student, branch, feeType,
-            amount, paymentDate, paymentMode,
-            receiptNumber, description, status,
-            createdBy
-        } = req.body;
-
-        if (branch) {
-            const isValidBranch = await validateBranch(branch, companyId, res);
-            if (!isValidBranch) return;
-        }
-
-        const newFee = await FeesModel.create({
             student,
-            company: companyId,
             branch,
             feeType,
             amount,
@@ -37,12 +31,48 @@ const createFee = async (req, res) => {
             description,
             status,
             createdBy
+        } = req.body;
+
+        if (branch) {
+            const isValidBranch = await validateBranch(branch, companyId, res);
+            if (!isValidBranch) return;
+        }
+
+        let attachmentUrl = null;
+        if (req.file) {
+            const buffer = req.file.buffer;
+            attachmentUrl = await uploadFile(buffer);
+        }
+
+        const numericAmount = toNumber(amount);
+
+        const newFee = await FeesModel.create({
+            student,
+            company: companyId,
+            branch,
+            feeType,
+            amount: numericAmount,
+            paymentDate,
+            paymentMode,
+            receiptNumber,
+            description,
+            status,
+            attachment: attachmentUrl,
+            createdBy
         });
+
+        if (student && numericAmount !== 0) {
+            await StudentModel.findByIdAndUpdate(
+                student,
+                {$inc: {amountPaid: numericAmount}},
+                {new: true}
+            );
+        }
 
         return res.status(201).json({
             status: 201,
             success: true,
-            message: "Fee record created successfully.",
+            message: "Fee record created successfully and student's amountPaid updated.",
             data: newFee
         });
     } catch (err) {
@@ -51,7 +81,7 @@ const createFee = async (req, res) => {
     }
 };
 
-// GET ALL FEES
+// GET ALL FEES (unchanged)
 const getAllFees = async (req, res) => {
     try {
         const {companyId} = req.params;
@@ -62,7 +92,7 @@ const getAllFees = async (req, res) => {
 
         const query = {
             company: companyId,
-            deletedAt: null,
+            deletedAt: null
         };
 
         if (branch) {
@@ -72,7 +102,7 @@ const getAllFees = async (req, res) => {
         }
 
         const fees = await FeesModel.find(query)
-            .populate("student", "name contact")
+            .populate("student", "firstName lastName contact")
             .populate("createdBy", "userName email")
             .populate("branch", "name");
 
@@ -87,7 +117,7 @@ const getAllFees = async (req, res) => {
     }
 };
 
-// GET SINGLE FEE
+// GET SINGLE FEE (unchanged except ensure amount present)
 const getSingleFee = async (req, res) => {
     try {
         const {companyId, feeId} = req.params;
@@ -98,7 +128,7 @@ const getSingleFee = async (req, res) => {
         const fee = await FeesModel.findOne({
             _id: feeId,
             company: companyId,
-            deletedAt: null,
+            deletedAt: null
         })
             .populate("student", "name contact")
             .populate("createdBy", "userName email")
@@ -119,7 +149,7 @@ const getSingleFee = async (req, res) => {
     }
 };
 
-// UPDATE FEE
+// UPDATE FEE (adjust student's amountPaid accordingly)
 const updateFee = async (req, res) => {
     try {
         const {companyId, feeId} = req.params;
@@ -130,7 +160,7 @@ const updateFee = async (req, res) => {
         const fee = await FeesModel.findOne({
             _id: feeId,
             company: companyId,
-            deletedAt: null,
+            deletedAt: null
         });
 
         if (!fee) {
@@ -144,16 +174,51 @@ const updateFee = async (req, res) => {
             if (!isValidBranch) return;
         }
 
-        const updatedFee = await FeesModel.findByIdAndUpdate(
-            feeId,
-            updateData,
-            {new: true}
-        );
+        if (req.file) {
+            const buffer = req.file.buffer;
+            updateData.attachment = await uploadFile(buffer);
+        }
+
+        const oldAmount = toNumber(fee.amount);
+        const newAmount = updateData.amount !== undefined ? toNumber(updateData.amount) : oldAmount;
+
+        const oldStudentId = fee.student ? String(fee.student) : null;
+        const newStudentId = updateData.student !== undefined ? String(updateData.student) : oldStudentId;
+
+        if (oldStudentId && newStudentId && oldStudentId !== newStudentId) {
+            if (oldAmount !== 0) {
+                await StudentModel.findByIdAndUpdate(
+                    oldStudentId,
+                    {$inc: {amountPaid: -oldAmount}},
+                    {new: true}
+                );
+            }
+            if (newAmount !== 0) {
+                await StudentModel.findByIdAndUpdate(
+                    newStudentId,
+                    {$inc: {amountPaid: newAmount}},
+                    {new: true}
+                );
+            }
+        } else {
+            const diff = newAmount - oldAmount;
+            if (newStudentId && diff !== 0) {
+                await StudentModel.findByIdAndUpdate(
+                    newStudentId,
+                    {$inc: {amountPaid: diff}},
+                    {new: true}
+                );
+            }
+        }
+
+        if (updateData.amount !== undefined) updateData.amount = newAmount;
+
+        const updatedFee = await FeesModel.findByIdAndUpdate(feeId, updateData, {new: true});
 
         return res.status(200).json({
             status: 200,
             success: true,
-            message: "Fee record updated successfully.",
+            message: "Fee record updated successfully and student's amountPaid adjusted.",
             data: updatedFee
         });
     } catch (err) {
@@ -162,14 +227,27 @@ const updateFee = async (req, res) => {
     }
 };
 
-// DELETE FEE (Soft Delete)
+// DELETE FEE (Soft Delete) - reverse student's amountPaid
 const deleteFee = async (req, res) => {
     try {
         const {companyId, feeId} = req.params;
-        const deletedBy = req.user?._id;
+        const deletedBy = req.body?.deletedBy;
 
         const company = await validateCompany(companyId, res);
         if (!company) return;
+
+        const fee = await FeesModel.findOne({
+            _id: feeId,
+            company: companyId,
+            deletedAt: null
+        });
+
+        if (!fee) {
+            return sendError(res, 404, "Fee record not found or already deleted.");
+        }
+
+        const feeAmount = toNumber(fee.amount);
+        const studentId = fee.student ? String(fee.student) : null;
 
         const deleted = await FeesModel.findOneAndUpdate(
             {_id: feeId, company: companyId, deletedAt: null},
@@ -181,10 +259,18 @@ const deleteFee = async (req, res) => {
             return sendError(res, 404, "Fee record not found or already deleted.");
         }
 
+        if (studentId && feeAmount !== 0) {
+            await StudentModel.findByIdAndUpdate(
+                studentId,
+                {$inc: {amountPaid: -feeAmount}},
+                {new: true}
+            );
+        }
+
         return res.status(200).json({
             status: 200,
             success: true,
-            message: "Fee record deleted successfully."
+            message: "Fee record deleted successfully and student's amountPaid reversed."
         });
     } catch (err) {
         console.error("Error deleting fee:", err);
@@ -197,5 +283,5 @@ module.exports = {
     getAllFees,
     getSingleFee,
     updateFee,
-    deleteFee,
+    deleteFee
 };

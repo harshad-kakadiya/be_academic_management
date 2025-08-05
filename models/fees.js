@@ -35,6 +35,7 @@ const feesSchema = new mongoose.Schema(
             type: String,
             enum: Object.values(PAYMENT_MODE),
             default: PAYMENT_MODE.CASH,
+            required: true,
         },
         receiptNumber: {
             type: String,
@@ -54,6 +55,7 @@ const feesSchema = new mongoose.Schema(
         createdBy: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User',
+            required: true,
         },
         deletedAt: {
             type: Date,
