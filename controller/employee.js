@@ -90,7 +90,7 @@ const createEmployee = async (req, res) => {
             branch,
             subRole,
             createdBy,
-            dob,
+            dob: dob === 'null' || dob === '' ? undefined : dob,
         });
 
         return res.status(201).json({
