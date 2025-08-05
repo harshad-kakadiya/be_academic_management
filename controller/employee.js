@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const EmployeeModel = require("../models/employee");
 const UserModel = require("../models/user");
 const {validateCompany, validateBranch} = require("../helpers/validators");
@@ -52,6 +53,13 @@ const createEmployee = async (req, res) => {
         const userName = await generateUniqueUsername(company.name, firstName, lastName);
         const hashedPassword = await createHash(password);
 
+
+        let employeeImage = null;
+        if (req.file) {
+            const buffer = req.file.buffer;
+            employeeImage = await uploadFile(buffer);
+        }
+
         const newUser = await UserModel.create({
             firstName,
             lastName,
@@ -63,13 +71,8 @@ const createEmployee = async (req, res) => {
             company: companyId,
             branch,
             subRole,
+            userImage: employeeImage
         });
-
-        let employeeImage = null;
-        if (req.file) {
-            const buffer = req.file.buffer;
-            employeeImage = await uploadFile(buffer);
-        }
 
         const newEmployee = await EmployeeModel.create({
             firstName,
@@ -172,6 +175,7 @@ const getSingleEmployee = async (req, res) => {
 
 // UPDATE EMPLOYEE
 const updateEmployee = async (req, res) => {
+    const session = await mongoose.startSession();
     try {
         const {companyId, employeeId} = req.params;
         const company = await validateCompany(companyId, res);
@@ -200,30 +204,50 @@ const updateEmployee = async (req, res) => {
             updateData.employeeImage = uploadedImageUrl;
         }
 
-        const updatedEmployee = await EmployeeModel.findByIdAndUpdate(employeeId, updateData, {
-            new: true,
+        await session.withTransaction(async () => {
+            const updatedEmployee = await EmployeeModel.findByIdAndUpdate(
+                employeeId,
+                updateData,
+                {new: true, session}
+            );
+
+            const targetUserId = employee.user && employee.user.toString();
+            if (!targetUserId) {
+                return;
+            }
+
+            const userUpdateData = {};
+            if (updateData.firstName) userUpdateData.firstName = updateData.firstName;
+            if (updateData.lastName) userUpdateData.lastName = updateData.lastName;
+            if (updateData.email) userUpdateData.email = updateData.email;
+            if (updateData.contact) userUpdateData.contact = updateData.contact;
+            if (updateData.branch) userUpdateData.branch = updateData.branch;
+            if (updateData.subRole) userUpdateData.subRole = updateData.subRole;
+            if (uploadedImageUrl) userUpdateData.userImage = uploadedImageUrl;
+
+            if (Object.keys(userUpdateData).length > 0) {
+                await UserModel.findByIdAndUpdate(targetUserId, userUpdateData, {
+                    new: true,
+                    session,
+                });
+            }
         });
 
-        const userUpdateData = {};
-        if (updateData.firstName) userUpdateData.firstName = updateData.firstName;
-        if (updateData.lastName) userUpdateData.lastName = updateData.lastName;
-        if (updateData.email) userUpdateData.email = updateData.email;
-        if (updateData.contact) userUpdateData.contact = updateData.contact;
-        if (updateData.branch) userUpdateData.branch = updateData.branch;
-        if (updateData.subRole) userUpdateData.subRole = updateData.subRole;
-        if (uploadedImageUrl) userUpdateData.userImage = uploadedImageUrl;
-
-        await UserModel.findByIdAndUpdate(employee.user, userUpdateData);
+        const refreshedEmployee = await EmployeeModel.findById(employeeId)
+            .populate("user", "userName email")
+            .populate("branch", "name");
 
         return res.status(200).json({
             status: 200,
             success: true,
-            message: "Employee and user updated successfully.",
-            data: updatedEmployee,
+            message: "Employee and linked user (if any) updated successfully.",
+            data: refreshedEmployee,
         });
     } catch (err) {
         console.error("Error updating employee:", err);
         return sendError(res, 500, "Internal server error. Failed to update employee.");
+    } finally {
+        session.endSession();
     }
 };
 
