@@ -22,6 +22,8 @@ const PAYMENT_MODE = {
 const PAYMENT_STATUS = {
     PAID: 'PAID',
     UNPAID: 'UNPAID',
+    PENDING: 'PENDING',
+    CANECELLED: 'CANECELLED',
 };
 
 const COMPLAIN_STATUS = {

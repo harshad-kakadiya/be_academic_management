@@ -36,8 +36,10 @@ const createStudent = async (req, res) => {
             reference,
             totalFee,
             discount,
+            extraPaid,
             amountPaid,
             branch,
+            gstPaid,
             createdBy,
         } = req.body;
 
@@ -110,6 +112,8 @@ const createStudent = async (req, res) => {
             company: companyId,
             branch,
             createdBy,
+            extraPaid,
+            gstPaid,
             user: newUser._id,
         });
 
@@ -351,6 +355,8 @@ const bulkUploadStudents = async (req, res) => {
                     city,
                     zipcode,
                     area,
+                    extraPaid,
+                    gstPaid
                 } = row;
 
                 const requiredFields = [
@@ -424,6 +430,8 @@ const bulkUploadStudents = async (req, res) => {
                     company: companyId,
                     branch,
                     createdBy,
+                    extraPaid,
+                    gstPaid,
                     user: newUser._id,
                 });
 

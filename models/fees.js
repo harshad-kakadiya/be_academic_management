@@ -27,6 +27,23 @@ const feesSchema = new mongoose.Schema(
             type: Number,
             required: true,
         },
+        isGst: {
+            type: Boolean,
+            default: false,
+        },
+        gstRate: {
+            type: Number,
+        },
+        gstNumber: {
+            type: String,
+            default: '',
+        },
+        gstAmount: {
+            type: Number,
+        },
+        totalWithGst: {
+            type: Number,
+        },
         paymentDate: {
             type: Date,
             required: true,

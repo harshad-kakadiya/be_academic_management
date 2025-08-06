@@ -73,6 +73,14 @@ const studentSchema = new mongoose.Schema(
             type: Number,
             default: 0,
         },
+        extraPaid: {
+            type: Number,
+            default: 0,
+        },
+        gstPaid: {
+            type: Number,
+            default: 0,
+        },
         remarks: [
             {
                 comment: {type: String},
