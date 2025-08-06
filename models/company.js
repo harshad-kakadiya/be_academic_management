@@ -19,6 +19,9 @@ const companySchema = new mongoose.Schema(
         date: {
             type: Date,
         },
+        slogan: {
+            type: String,
+        },
         address: {type: String},
         deletedAt: {
             type: Date,

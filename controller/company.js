@@ -4,7 +4,7 @@ const {uploadFile} = require("../services/uploadfile");
 // CREATE COMPANY
 const createCompany = async (req, res) => {
     try {
-        const {name, website, isSubscription, date} = req.body;
+        const {name, website, isSubscription, slogan, date} = req.body;
 
         let companyLogo = null;
         if (req.file) {
@@ -17,6 +17,7 @@ const createCompany = async (req, res) => {
             website,
             isSubscription,
             date,
+            slogan,
             companyLogo,
         });
 
