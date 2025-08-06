@@ -6,9 +6,9 @@ const {
     getSingleCompany,
     updateCompany,
     deleteCompany,
-} = require("../controller/company");
+} = require("../../controller/company");
 
-const upload = require("../middlewares/upload");
+const upload = require("../../middlewares/upload");
 
 router.post("/", upload.single("companyLogo"), createCompany);
 router.get("/", getAllCompanies);

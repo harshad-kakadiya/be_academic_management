@@ -7,7 +7,7 @@ const {
     getSingleEvent,
     updateEvent,
     deleteEvent,
-} = require("../controller/calendar");
+} = require("../../controller/calendar");
 
 router.post("/:companyId/event", createEvent);
 router.get("/:companyId/event", getAllEvents);

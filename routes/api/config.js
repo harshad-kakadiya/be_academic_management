@@ -4,7 +4,7 @@ const router = express.Router();
 const {
     updateConfig,
     getConfigs
-} = require("../controller/config");
+} = require("../../controller/config");
 
 router.get("/:companyId/config", getConfigs);
 router.put("/:companyId/config/:id", updateConfig);

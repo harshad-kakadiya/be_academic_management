@@ -6,9 +6,9 @@ const {
     getSingleEmployee,
     updateEmployee,
     deleteEmployee,
-} = require("../controller/employee");
+} = require("../../controller/employee");
 
-const upload = require("../middlewares/upload");
+const upload = require("../../middlewares/upload");
 
 router.post("/:companyId/employee", upload.single("employeeImage"), createEmployee);
 router.get("/:companyId/employee", getAllEmployees);

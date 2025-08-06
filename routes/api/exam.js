@@ -7,7 +7,7 @@ const {
     getSingleExam,
     updateExam,
     deleteExam,
-} = require("../controller/exam");
+} = require("../../controller/exam");
 
 router.post("/:companyId/exam", createExam);
 router.get("/:companyId/exam", getAllExams);

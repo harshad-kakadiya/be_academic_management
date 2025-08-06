@@ -8,7 +8,7 @@ const {
     updateBatch,
     deleteBatch,
     addStudentToBatch,
-} = require("../controller/batch");
+} = require("../../controller/batch");
 
 
 router.post("/:companyId/batch", createBatch);

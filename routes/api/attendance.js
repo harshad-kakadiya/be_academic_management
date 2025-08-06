@@ -7,7 +7,7 @@ const {
     getSingleAttendance,
     updateAttendance,
     deleteAttendance,
-} = require("../controller/attendance");
+} = require("../../controller/attendance");
 
 router.post("/:companyId/attendance", createAttendance);
 router.get("/:companyId/attendance", getAllAttendance);

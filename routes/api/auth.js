@@ -4,8 +4,8 @@ const {
     login,
     resetPassword,
     getUser, sendResetOTP, verifyOTPAndSetPassword,
-} = require("../controller/auth");
-const auth = require("../middlewares/auth");
+} = require("../../controller/auth");
+const auth = require("../../middlewares/auth");
 
 const router = express.Router();
 

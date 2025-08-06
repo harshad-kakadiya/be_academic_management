@@ -1,18 +1,19 @@
 const express = require('express');
 const router = express.Router();
 
-const authRouter = require("../routes/auth")
-const userRouter = require("../routes/user")
-const employeeRouter = require("../routes/employee")
-const companyRouter = require("../routes/company")
-const studentRouter = require("../routes/student")
-const examRouter = require("../routes/exam")
-const feesRouter = require("../routes/fees")
-const complainRouter = require("../routes/complain")
-const batchRouter = require("../routes/batch")
-const calendarRouter = require("../routes/calendar")
-const configRouter = require("../routes/config")
-const branchRouter = require("../routes/branch")
+const authRouter = require("./api/auth")
+const userRouter = require("./api/user")
+const employeeRouter = require("./api/employee")
+const companyRouter = require("./api/company")
+const studentRouter = require("./api/student")
+const examRouter = require("./api/exam")
+const feesRouter = require("./api/fees")
+const complainRouter = require("./api/complain")
+const batchRouter = require("./api/batch")
+const calendarRouter = require("./api/calendar")
+const configRouter = require("./api/config")
+const branchRouter = require("./api/branch")
+const assignmentRouter = require("./api/assignment")
 
 const auth = require("../middlewares/auth");
 
@@ -28,5 +29,6 @@ router.use("/company", auth, complainRouter);
 router.use("/company", auth, batchRouter);
 router.use("/company", auth, calendarRouter);
 router.use("/company", auth, branchRouter);
+router.use("/company", auth, assignmentRouter);
 
 module.exports = router;

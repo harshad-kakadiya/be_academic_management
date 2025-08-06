@@ -7,9 +7,9 @@ const {
     getSingleFee,
     updateFee,
     deleteFee,
-} = require("../controller/fees");
+} = require("../../controller/fees");
 
-const upload = require("../middlewares/upload");
+const upload = require("../../middlewares/upload");
 
 router.post("/:companyId/fee", upload.single("attachment"), createFee);
 router.get("/:companyId/fee", getAllFees);

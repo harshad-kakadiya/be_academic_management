@@ -6,9 +6,9 @@ const {
     getSingleUser,
     updateUser,
     deleteUser
-} = require("../controller/user");
+} = require("../../controller/user");
 
-const upload = require("../middlewares/upload");
+const upload = require("../../middlewares/upload");
 
 router.post("/:companyId/user", upload.single("userImage"), createUser);
 router.get("/:companyId/user", getAllUsers);

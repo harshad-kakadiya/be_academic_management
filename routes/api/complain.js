@@ -7,9 +7,9 @@ const {
     getSingleComplain,
     updateComplain,
     deleteComplain,
-} = require("../controller/complain");
+} = require("../../controller/complain");
 
-const upload = require("../middlewares/upload");
+const upload = require("../../middlewares/upload");
 
 router.post("/:companyId/complain", upload.single("attachment"), createComplain);
 router.get("/:companyId/complain", getAllComplains);

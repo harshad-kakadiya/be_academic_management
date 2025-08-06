@@ -9,9 +9,9 @@ const {
     deleteStudent,
     addStudentRemark,
     bulkUploadStudents,
-} = require("../controller/student");
+} = require("../../controller/student");
 
-const upload = require("../middlewares/upload");
+const upload = require("../../middlewares/upload");
 
 router.post("/:companyId/student", upload.single("studentImage"), createStudent);
 router.get("/:companyId/student", getAllStudents);

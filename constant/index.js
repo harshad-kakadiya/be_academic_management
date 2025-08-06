@@ -74,9 +74,15 @@ const LEAVE_STATUS = {
     REJECTED: "REJECTED",
 };
 
+const ASSIGNMENT_STATUS = {
+    NOT_COMPLETED: 'NOT_COMPLETED',
+    COMPLETED: 'COMPLETED',
+};
+
 module.exports = {
     ROLES,
     FEETYPE,
+    ASSIGNMENT_STATUS,
     PAYMENT_MODE,
     PAYMENT_STATUS,
     COMPLAIN_STATUS,
@@ -86,3 +92,4 @@ module.exports = {
     EVENT_TYPES,
     LEAVE_STATUS,
 };
+
