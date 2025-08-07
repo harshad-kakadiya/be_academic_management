@@ -77,7 +77,7 @@ const getAllExams = async (req, res) => {
         }
 
         const exams = await ExamModel.find(query)
-            .populate("conductedBy", "name")
+            .populate("conductedBy", "firstName lastName")
             .populate("createdBy", "userName email")
             .populate("branch", "name")
             .populate("students.student", "firstName lastName std contact");

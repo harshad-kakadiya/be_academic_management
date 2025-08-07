@@ -105,7 +105,7 @@ const getSingleBatch = async (req, res) => {
             deletedAt: null,
         })
             .populate("branch", "name")
-            .populate("students", "firstName lastName userName");
+            .populate("students", "firstName lastName userName contact std");
 
         if (!batch) {
             return sendError(res, 404, "Batch not found");
