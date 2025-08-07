@@ -106,10 +106,10 @@ const getSingleExam = async (req, res) => {
             company: companyId,
             deletedAt: null,
         })
-            .populate("conductedBy", "name")
+            .populate("conductedBy", "firstName lastName")
             .populate("createdBy", "userName email")
             .populate("branch", "name")
-            .populate("students.student", "name");
+            .populate("students.student", "firstName lastName std contact");
 
         if (!exam) {
             return sendError(res, 404, "Exam not found.");
