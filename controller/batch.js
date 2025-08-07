@@ -78,7 +78,7 @@ const getAllBatches = async (req, res) => {
 
         const batches = await BatchModel.find(query)
             .populate("branch", "name")
-            .populate("students", "firstName lastName userName");
+            .populate("students", "firstName lastName userName contact std");
 
         return res.status(200).json({
             status: 200,
