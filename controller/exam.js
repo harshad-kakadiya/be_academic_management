@@ -80,7 +80,7 @@ const getAllExams = async (req, res) => {
             .populate("conductedBy", "name")
             .populate("createdBy", "userName email")
             .populate("branch", "name")
-            .populate("students.student", "name");
+            .populate("students.student", "firstName lastName std contact");
 
         return res.status(200).json({
             status: 200,
