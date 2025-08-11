@@ -14,6 +14,7 @@ const calendarRouter = require("./api/calendar")
 const configRouter = require("./api/config")
 const branchRouter = require("./api/branch")
 const assignmentRouter = require("./api/assignment")
+const attendanceRouter = require("./api/attendance")
 
 const auth = require("../middlewares/auth");
 
@@ -30,5 +31,6 @@ router.use("/company", auth, batchRouter);
 router.use("/company", auth, calendarRouter);
 router.use("/company", auth, branchRouter);
 router.use("/company", auth, assignmentRouter);
+router.use("/company", auth, attendanceRouter);
 
 module.exports = router;
