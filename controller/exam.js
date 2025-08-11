@@ -173,7 +173,7 @@ const updateExam = async (req, res) => {
 const deleteExam = async (req, res) => {
     try {
         const {companyId, examId} = req.params;
-        const deletedBy = req.user?._id;
+        const deletedBy = req.body?.deletedBy;
 
         const company = await validateCompany(companyId, res);
         if (!company) return;

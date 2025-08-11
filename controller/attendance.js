@@ -14,13 +14,7 @@ const createAttendance = async (req, res) => {
         const company = await validateCompany(companyId, res);
         if (!company) return;
 
-        const {
-            student,
-            date,
-            status,
-            branch,
-            createdBy,
-        } = req.body;
+        const {student, date, status, branch, createdBy} = req.body;
 
         if (!student || !date) {
             return sendError(res, 400, "Student and date are required.");
@@ -67,6 +61,92 @@ const createAttendance = async (req, res) => {
     }
 };
 
+// BULK CREATE ATTENDANCE
+const bulkCreateAttendance = async (req, res) => {
+    try {
+        const {companyId} = req.params;
+        const company = await validateCompany(companyId, res);
+        if (!company) return;
+
+        let attendanceData = req.body;
+        if (!Array.isArray(attendanceData) || attendanceData.length === 0) {
+            return sendError(res, 400, "Attendance data array is required.");
+        }
+
+        attendanceData = attendanceData.map(item => ({
+            ...item,
+            date: new Date(item.date)
+        }));
+
+        const createdRecords = [];
+        const skippedRecords = [];
+
+        const studentIds = [...new Set(attendanceData.map(r => r.student))];
+        const validStudents = await StudentModel.find({
+            _id: {$in: studentIds},
+            company: companyId,
+            deletedAt: null
+        }).select("_id");
+
+        const validStudentIds = validStudents.map(s => s._id.toString());
+
+        for (const record of attendanceData) {
+            const {student, date, branch} = record;
+
+            if (!student || !date) {
+                skippedRecords.push({record, reason: "Missing student or date"});
+                continue;
+            }
+
+            if (!validStudentIds.includes(student.toString())) {
+                skippedRecords.push({record, reason: "Student not found in this company"});
+                continue;
+            }
+
+            if (branch) {
+                const isValidBranch = await validateBranch(branch, companyId, res);
+                if (!isValidBranch) {
+                    skippedRecords.push({record, reason: "Invalid branch for this company"});
+                    continue;
+                }
+            }
+
+            const existing = await AttendanceModel.findOne({
+                student,
+                date,
+                deletedAt: null
+            });
+            if (existing) {
+                skippedRecords.push({record, reason: "Attendance already marked for this student on this date"});
+                continue;
+            }
+
+            createdRecords.push({
+                ...record,
+                company: companyId
+            });
+        }
+
+        let inserted = [];
+        if (createdRecords.length > 0) {
+            inserted = await AttendanceModel.insertMany(createdRecords);
+        }
+
+        return res.status(201).json({
+            status: 201,
+            success: true,
+            message: "Bulk attendance processed",
+            createdCount: inserted.length,
+            skippedCount: skippedRecords.length,
+            createdRecords: inserted,
+            skippedRecords
+        });
+    } catch (err) {
+        console.error("Error bulk creating attendance:", err);
+        return sendError(res, 500, "Internal server error. Failed to process bulk attendance.");
+    }
+};
+
 // GET ALL ATTENDANCE
 const getAllAttendance = async (req, res) => {
     try {
@@ -76,10 +156,7 @@ const getAllAttendance = async (req, res) => {
         const company = await validateCompany(companyId, res);
         if (!company) return;
 
-        const query = {
-            company: companyId,
-            deletedAt: null,
-        };
+        const query = {company: companyId, deletedAt: null};
 
         if (branch) {
             const isValidBranch = await validateBranch(branch, companyId, res);
@@ -155,7 +232,7 @@ const updateAttendance = async (req, res) => {
             return sendError(res, 404, "Attendance record not found.");
         }
 
-        const {branch, student, date} = req.body;
+        const {branch, student} = req.body;
 
         if (branch) {
             const isValidBranch = await validateBranch(branch, companyId, res);
@@ -169,9 +246,7 @@ const updateAttendance = async (req, res) => {
             }
         }
 
-        const updated = await AttendanceModel.findByIdAndUpdate(attendanceId, req.body, {
-            new: true,
-        });
+        const updated = await AttendanceModel.findByIdAndUpdate(attendanceId, req.body, {new: true});
 
         return res.status(200).json({
             status: 200,
@@ -189,7 +264,7 @@ const updateAttendance = async (req, res) => {
 const deleteAttendance = async (req, res) => {
     try {
         const {companyId, attendanceId} = req.params;
-        const deletedBy = req.user?._id;
+        const deletedBy = req.body?.deletedBy;
 
         const company = await validateCompany(companyId, res);
         if (!company) return;
@@ -217,6 +292,7 @@ const deleteAttendance = async (req, res) => {
 
 module.exports = {
     createAttendance,
+    bulkCreateAttendance,
     getAllAttendance,
     getSingleAttendance,
     updateAttendance,
