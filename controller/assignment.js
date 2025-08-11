@@ -113,6 +113,7 @@ const getAssignments = async (req, res) => {
             .populate("assignedBy", "firstName lastName _id")
             .populate("branch", "name _id")
             .populate("createdBy", "firstName lastName _id")
+            .populate("students.student", "firstName lastName std contact _id")
             .sort({createdAt: -1})
             .skip(skip)
             .limit(Number(limit))
@@ -159,7 +160,7 @@ const getAssignmentById = async (req, res) => {
             .populate("assignedBy", "firstName lastName _id")
             .populate("createdBy", "firstName lastName _id")
             .populate("branch", "name _id")
-            .populate("students.student", "firstName lastName _id")
+            .populate("students.student", "firstName lastName std contact _id")
             .lean();
 
         if (!assignment) return sendError(res, 404, "Assignment not found.");
