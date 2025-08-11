@@ -150,13 +150,13 @@ const getAssignments = async (req, res) => {
 // GET ASSIGNMENT BY ID
 const getAssignmentById = async (req, res) => {
     try {
-        const {companyId, id} = req.params;
+        const {companyId, assignmentId} = req.params;
         const company = await validateCompany(companyId, res);
         if (!company) return;
 
-        if (!id) return sendError(res, 400, "Assignment id is required.");
+        if (!assignmentId) return sendError(res, 400, "Assignment id is required.");
 
-        const assignment = await AssignmentModel.findOne({_id: id, company: companyId, deletedAt: null})
+        const assignment = await AssignmentModel.findOne({_id: assignmentId, company: companyId, deletedAt: null})
             .populate("assignedBy", "firstName lastName _id")
             .populate("createdBy", "firstName lastName _id")
             .populate("branch", "name _id")
@@ -180,11 +180,11 @@ const getAssignmentById = async (req, res) => {
 // UPDATE ASSIGNMENT
 const updateAssignment = async (req, res) => {
     try {
-        const {companyId, id} = req.params;
+        const {companyId, assignmentId} = req.params;
         const company = await validateCompany(companyId, res);
         if (!company) return;
 
-        if (!id) return sendError(res, 400, "Assignment id is required.");
+        if (!assignmentId) return sendError(res, 400, "Assignment id is required.");
 
         const {
             dueDate,
@@ -218,7 +218,7 @@ const updateAssignment = async (req, res) => {
         if (otherInfo !== undefined) update.otherInfo = otherInfo;
 
         const updated = await AssignmentModel.findOneAndUpdate(
-            {_id: id, company: companyId, deletedAt: null},
+            {_id: assignmentId, company: companyId, deletedAt: null},
             {$set: update},
             {new: true}
         );
@@ -240,14 +240,14 @@ const updateAssignment = async (req, res) => {
 // SOFT DELETE ASSIGNMENT
 const deleteAssignment = async (req, res) => {
     try {
-        const {companyId, id} = req.params;
-        const {deletedBy} = req.body; // user id doing deletion
+        const {companyId, assignmentId} = req.params;
+        const {deletedBy} = req.body; // user assignmentId doing deletion
         const company = await validateCompany(companyId, res);
         if (!company) return;
 
-        if (!id) return sendError(res, 400, "Assignment id is required.");
+        if (!assignmentId) return sendError(res, 400, "Assignment id is required.");
 
-        const assignment = await AssignmentModel.findOne({_id: id, company: companyId, deletedAt: null});
+        const assignment = await AssignmentModel.findOne({_id: assignmentId, company: companyId, deletedAt: null});
         if (!assignment) return sendError(res, 404, "Assignment not found or already deleted.");
 
         assignment.deletedAt = new Date();
@@ -268,14 +268,14 @@ const deleteAssignment = async (req, res) => {
 // SUBMIT ASSIGNMENT (student submits) - supports file upload in req.file
 const submitAssignment = async (req, res) => {
     try {
-        const {companyId, id} = req.params;
+        const {companyId, assignmentId} = req.params;
         const {studentId, remarks} = req.body;
         const company = await validateCompany(companyId, res);
         if (!company) return;
 
-        if (!id || !studentId) return sendError(res, 400, "Assignment id and studentId are required.");
+        if (!assignmentId || !studentId) return sendError(res, 400, "Assignment id and studentId are required.");
 
-        const assignment = await AssignmentModel.findOne({_id: id, company: companyId, deletedAt: null});
+        const assignment = await AssignmentModel.findOne({_id: assignmentId, company: companyId, deletedAt: null});
         if (!assignment) return sendError(res, 404, "Assignment not found.");
 
         const studentEntryIndex = assignment.students.findIndex(
@@ -318,20 +318,20 @@ const submitAssignment = async (req, res) => {
 // UPDATE STUDENT STATUS (e.g., mark not completed, or adjust remarks)
 const updateStudentStatus = async (req, res) => {
     try {
-        const {companyId, id} = req.params;
+        const {companyId, assignmentId} = req.params;
         const {studentId, status, remarks} = req.body;
 
         const company = await validateCompany(companyId, res);
         if (!company) return;
 
-        if (!id || !studentId) return sendError(res, 400, "Assignment id and studentId are required.");
+        if (!assignmentId || !studentId) return sendError(res, 400, "Assignment id and studentId are required.");
         if (!status) return sendError(res, 400, "status is required.");
 
         if (!Object.values(ASSIGNMENT_STATUS).includes(status)) {
             return sendError(res, 400, "Invalid status value.");
         }
 
-        const assignment = await AssignmentModel.findOne({_id: id, company: companyId, deletedAt: null});
+        const assignment = await AssignmentModel.findOne({_id: assignmentId, company: companyId, deletedAt: null});
         if (!assignment) return sendError(res, 404, "Assignment not found.");
 
         const studentEntryIndex = assignment.students.findIndex(
