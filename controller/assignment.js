@@ -201,7 +201,7 @@ const getAssignmentById = async (req, res) => {
 // UPDATE ASSIGNMENT
 const updateAssignment = async (req, res) => {
     try {
-        const {companyId, assignmentId} = req.params;
+        const {companyId, id} = req.params;
         const company = await validateCompany(companyId, res);
         if (!company) return;
 

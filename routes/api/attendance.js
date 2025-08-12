@@ -15,6 +15,6 @@ router.get("/:companyId/attendance", getAllAttendance);
 router.get("/:companyId/attendance/:attendanceId", getSingleAttendance);
 router.put("/:companyId/attendance/:attendanceId", updateAttendance);
 router.delete("/:companyId/attendance/:attendanceId", deleteAttendance);
-router.delete("/:companyId/attendance/bulk", bulkCreateAttendance);
+router.post("/:companyId/attendance/bulk", bulkCreateAttendance);
 
 module.exports = router;
