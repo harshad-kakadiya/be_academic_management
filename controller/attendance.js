@@ -7,6 +7,17 @@ const sendError = (res, status, message) => {
     return res.status(status).json({status, success: false, message});
 };
 
+// Helper: Get start & end of a date
+const getDayRange = (date) => {
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    return {startOfDay, endOfDay};
+};
+
 // CREATE ATTENDANCE
 const createAttendance = async (req, res) => {
     try {
@@ -20,7 +31,11 @@ const createAttendance = async (req, res) => {
             return sendError(res, 400, "Student and date are required.");
         }
 
-        const studentDoc = await StudentModel.findOne({_id: student, company: companyId, deletedAt: null});
+        const studentDoc = await StudentModel.findOne({
+            _id: student,
+            company: companyId,
+            deletedAt: null,
+        });
         if (!studentDoc) {
             return sendError(res, 404, "Student not found in this company.");
         }
@@ -30,9 +45,11 @@ const createAttendance = async (req, res) => {
             if (!isValidBranch) return;
         }
 
+        const {startOfDay, endOfDay} = getDayRange(date);
+
         const existing = await AttendanceModel.findOne({
             student,
-            date: new Date(date),
+            date: {$gte: startOfDay, $lte: endOfDay},
             deletedAt: null,
         });
 
@@ -42,7 +59,7 @@ const createAttendance = async (req, res) => {
 
         const attendance = await AttendanceModel.create({
             student,
-            date,
+            date: startOfDay,
             status,
             branch,
             company: companyId,
@@ -73,11 +90,6 @@ const bulkCreateAttendance = async (req, res) => {
             return sendError(res, 400, "Attendance data array is required.");
         }
 
-        attendanceData = attendanceData.map(item => ({
-            ...item,
-            date: new Date(item.date)
-        }));
-
         const createdRecords = [];
         const skippedRecords = [];
 
@@ -85,7 +97,7 @@ const bulkCreateAttendance = async (req, res) => {
         const validStudents = await StudentModel.find({
             _id: {$in: studentIds},
             company: companyId,
-            deletedAt: null
+            deletedAt: null,
         }).select("_id");
 
         const validStudentIds = validStudents.map(s => s._id.toString());
@@ -111,11 +123,14 @@ const bulkCreateAttendance = async (req, res) => {
                 }
             }
 
+            const {startOfDay, endOfDay} = getDayRange(date);
+
             const existing = await AttendanceModel.findOne({
                 student,
-                date,
-                deletedAt: null
+                date: {$gte: startOfDay, $lte: endOfDay},
+                deletedAt: null,
             });
+
             if (existing) {
                 skippedRecords.push({record, reason: "Attendance already marked for this student on this date"});
                 continue;
@@ -123,7 +138,8 @@ const bulkCreateAttendance = async (req, res) => {
 
             createdRecords.push({
                 ...record,
-                company: companyId
+                date: startOfDay,
+                company: companyId,
             });
         }
 
@@ -139,7 +155,7 @@ const bulkCreateAttendance = async (req, res) => {
             createdCount: inserted.length,
             skippedCount: skippedRecords.length,
             createdRecords: inserted,
-            skippedRecords
+            skippedRecords,
         });
     } catch (err) {
         console.error("Error bulk creating attendance:", err);
@@ -165,7 +181,8 @@ const getAllAttendance = async (req, res) => {
         }
 
         if (date) {
-            query.date = new Date(date);
+            const {startOfDay, endOfDay} = getDayRange(date);
+            query.date = {$gte: startOfDay, $lte: endOfDay};
         }
 
         const attendanceList = await AttendanceModel.find(query)
@@ -232,7 +249,7 @@ const updateAttendance = async (req, res) => {
             return sendError(res, 404, "Attendance record not found.");
         }
 
-        const {branch, student} = req.body;
+        const {branch, student, date} = req.body;
 
         if (branch) {
             const isValidBranch = await validateBranch(branch, companyId, res);
@@ -240,10 +257,28 @@ const updateAttendance = async (req, res) => {
         }
 
         if (student) {
-            const validStudent = await StudentModel.findOne({_id: student, company: companyId, deletedAt: null});
+            const validStudent = await StudentModel.findOne({
+                _id: student,
+                company: companyId,
+                deletedAt: null,
+            });
             if (!validStudent) {
                 return sendError(res, 404, "Invalid student for this company.");
             }
+        }
+
+        if (student && date) {
+            const {startOfDay, endOfDay} = getDayRange(date);
+            const duplicate = await AttendanceModel.findOne({
+                _id: {$ne: attendanceId},
+                student,
+                date: {$gte: startOfDay, $lte: endOfDay},
+                deletedAt: null,
+            });
+            if (duplicate) {
+                return sendError(res, 409, "Attendance already exists for this student on this date.");
+            }
+            req.body.date = startOfDay;
         }
 
         const updated = await AttendanceModel.findByIdAndUpdate(attendanceId, req.body, {new: true});
