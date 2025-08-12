@@ -28,16 +28,29 @@ const studentAssignmentSchema = new mongoose.Schema({
 
 const assignmentSchema = new mongoose.Schema(
     {
-        dueDate: {
-            type: Date,
-            required: true,
-        },
         title: {
             type: String,
             required: true,
+            trim: true,
         },
         description: {
             type: String,
+            default: '',
+        },
+        assignmentType: {
+            type: String,
+            trim: true,
+        },
+        subject: {
+            type: String,
+        },
+        issueDate: {
+            type: Date,
+            default: Date.now,
+        },
+        dueDate: {
+            type: Date,
+            required: true,
         },
         students: [studentAssignmentSchema],
         assignedBy: {

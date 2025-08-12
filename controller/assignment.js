@@ -24,6 +24,8 @@ const createAssignment = async (req, res) => {
             assignedBy,
             createdBy,
             otherInfo,
+            assignmentType,
+            subject,
         } = req.body;
 
         if (!dueDate || !title || !assignedBy) {
@@ -35,18 +37,19 @@ const createAssignment = async (req, res) => {
             if (!isValidBranch) return;
         }
 
-        const normalizedStudents = (Array.isArray(students) ? students : [])
-            .map((s) => {
-                if (typeof s === "string" || s instanceof mongoose.Types.ObjectId) {
-                    return {student: s};
-                }
-                return s;
-            });
+        const normalizedStudents = (Array.isArray(students) ? students : []).map((s) => {
+            if (typeof s === "string" || s instanceof mongoose.Types.ObjectId) {
+                return {student: s};
+            }
+            return s;
+        });
 
         const newAssignment = await AssignmentModel.create({
             dueDate,
             title,
             description,
+            assignmentType,
+            subject,
             students: normalizedStudents,
             assignedBy,
             company: companyId,
@@ -67,7 +70,7 @@ const createAssignment = async (req, res) => {
     }
 };
 
-// GET ASSIGNMENTS (list) - supports filters and pagination
+// GET ASSIGNMENTS (list)
 const getAssignments = async (req, res) => {
     try {
         const {companyId} = req.params;
@@ -83,6 +86,8 @@ const getAssignments = async (req, res) => {
             page = 1,
             limit = 20,
             search,
+            assignmentType,
+            subject,
         } = req.query;
 
         const query = {company: companyId, deletedAt: null};
@@ -91,6 +96,14 @@ const getAssignments = async (req, res) => {
             const isValidBranch = await validateBranch(branch, companyId, res);
             if (!isValidBranch) return;
             query.branch = branch;
+        }
+
+        if (assignmentType) {
+            query.assignmentType = assignmentType;
+        }
+
+        if (subject) {
+            query.subject = subject;
         }
 
         if (search) {
@@ -113,25 +126,33 @@ const getAssignments = async (req, res) => {
             .populate("assignedBy", "firstName lastName _id")
             .populate("branch", "name _id")
             .populate("createdBy", "firstName lastName _id")
+            .populate({
+                path: "students.student",
+                select: "firstName lastName _id contact branch",
+                populate: {
+                    path: "branch",
+                    select: "name _id"
+                }
+            })
             .sort({createdAt: -1})
             .skip(skip)
-            .limit(Number(limit))
-            .lean();
+            .limit(Number(limit));
 
         if (student) {
-            assignments = assignments.filter((a) =>
+            assignments = assignments.filter(a =>
                 Array.isArray(a.students) &&
-                a.students.some((s) => String(s.student) === String(student))
+                a.students.some(s => String(s.student?._id) === String(student))
             );
         }
 
         if (status) {
-            const statusUpper = status.toString();
-            assignments = assignments.filter((a) =>
+            assignments = assignments.filter(a =>
                 Array.isArray(a.students) &&
-                a.students.some((s) => s.status === statusUpper)
+                a.students.some(s => s.status === status)
             );
         }
+
+        assignments = assignments.map(a => a.toObject());
 
         return res.status(200).json({
             status: 200,
@@ -140,6 +161,7 @@ const getAssignments = async (req, res) => {
             meta: {total, page: Number(page), limit: Number(limit)},
             data: assignments,
         });
+
     } catch (err) {
         console.error("Error fetching assignments:", err);
         return sendError(res, 500, "Internal server error. Failed to fetch assignments.");
@@ -149,13 +171,13 @@ const getAssignments = async (req, res) => {
 // GET ASSIGNMENT BY ID
 const getAssignmentById = async (req, res) => {
     try {
-        const {companyId, id} = req.params;
+        const {companyId, assignmentId} = req.params;
         const company = await validateCompany(companyId, res);
         if (!company) return;
 
-        if (!id) return sendError(res, 400, "Assignment id is required.");
+        if (!assignmentId) return sendError(res, 400, "Assignment id is required.");
 
-        const assignment = await AssignmentModel.findOne({_id: id, company: companyId, deletedAt: null})
+        const assignment = await AssignmentModel.findOne({_id: assignmentId, company: companyId, deletedAt: null})
             .populate("assignedBy", "firstName lastName _id")
             .populate("createdBy", "firstName lastName _id")
             .populate("branch", "name _id")
@@ -179,11 +201,11 @@ const getAssignmentById = async (req, res) => {
 // UPDATE ASSIGNMENT
 const updateAssignment = async (req, res) => {
     try {
-        const {companyId, id} = req.params;
+        const {companyId, assignmentId} = req.params;
         const company = await validateCompany(companyId, res);
         if (!company) return;
 
-        if (!id) return sendError(res, 400, "Assignment id is required.");
+        if (!assignmentId) return sendError(res, 400, "Assignment id is required.");
 
         const {
             dueDate,
@@ -193,6 +215,8 @@ const updateAssignment = async (req, res) => {
             branch,
             assignedBy,
             otherInfo,
+            assignmentType,
+            subject,
         } = req.body;
 
         if (branch) {
@@ -204,6 +228,8 @@ const updateAssignment = async (req, res) => {
         if (dueDate) update.dueDate = dueDate;
         if (title) update.title = title;
         if (description !== undefined) update.description = description;
+        if (assignmentType !== undefined) update.assignmentType = assignmentType;
+        if (subject !== undefined) update.subject = subject;
         if (students !== undefined) {
             update.students = (Array.isArray(students) ? students : []).map((s) => {
                 if (typeof s === "string" || s instanceof mongoose.Types.ObjectId) {
@@ -217,7 +243,7 @@ const updateAssignment = async (req, res) => {
         if (otherInfo !== undefined) update.otherInfo = otherInfo;
 
         const updated = await AssignmentModel.findOneAndUpdate(
-            {_id: id, company: companyId, deletedAt: null},
+            {_id: assignmentId, company: companyId, deletedAt: null},
             {$set: update},
             {new: true}
         );
@@ -239,14 +265,14 @@ const updateAssignment = async (req, res) => {
 // SOFT DELETE ASSIGNMENT
 const deleteAssignment = async (req, res) => {
     try {
-        const {companyId, id} = req.params;
-        const {deletedBy} = req.body; // user id doing deletion
+        const {companyId, assignmentId} = req.params;
+        const {deletedBy} = req.body;
         const company = await validateCompany(companyId, res);
         if (!company) return;
 
-        if (!id) return sendError(res, 400, "Assignment id is required.");
+        if (!assignmentId) return sendError(res, 400, "Assignment id is required.");
 
-        const assignment = await AssignmentModel.findOne({_id: id, company: companyId, deletedAt: null});
+        const assignment = await AssignmentModel.findOne({_id: assignmentId, company: companyId, deletedAt: null});
         if (!assignment) return sendError(res, 404, "Assignment not found or already deleted.");
 
         assignment.deletedAt = new Date();
@@ -264,17 +290,17 @@ const deleteAssignment = async (req, res) => {
     }
 };
 
-// SUBMIT ASSIGNMENT (student submits) - supports file upload in req.file
+// SUBMIT ASSIGNMENT
 const submitAssignment = async (req, res) => {
     try {
-        const {companyId, id} = req.params;
+        const {companyId, assignmentId} = req.params;
         const {studentId, remarks} = req.body;
         const company = await validateCompany(companyId, res);
         if (!company) return;
 
-        if (!id || !studentId) return sendError(res, 400, "Assignment id and studentId are required.");
+        if (!assignmentId || !studentId) return sendError(res, 400, "Assignment id and studentId are required.");
 
-        const assignment = await AssignmentModel.findOne({_id: id, company: companyId, deletedAt: null});
+        const assignment = await AssignmentModel.findOne({_id: assignmentId, company: companyId, deletedAt: null});
         if (!assignment) return sendError(res, 404, "Assignment not found.");
 
         const studentEntryIndex = assignment.students.findIndex(
@@ -282,7 +308,6 @@ const submitAssignment = async (req, res) => {
         );
 
         const attachmentUrl = req.file ? await uploadFile(req.file.buffer) : null;
-
         const now = new Date();
 
         if (studentEntryIndex === -1) {
@@ -314,23 +339,23 @@ const submitAssignment = async (req, res) => {
     }
 };
 
-// UPDATE STUDENT STATUS (e.g., mark not completed, or adjust remarks)
+// UPDATE STUDENT STATUS
 const updateStudentStatus = async (req, res) => {
     try {
-        const {companyId, id} = req.params;
+        const {companyId, assignmentId} = req.params;
         const {studentId, status, remarks} = req.body;
 
         const company = await validateCompany(companyId, res);
         if (!company) return;
 
-        if (!id || !studentId) return sendError(res, 400, "Assignment id and studentId are required.");
+        if (!assignmentId || !studentId) return sendError(res, 400, "Assignment id and studentId are required.");
         if (!status) return sendError(res, 400, "status is required.");
 
         if (!Object.values(ASSIGNMENT_STATUS).includes(status)) {
             return sendError(res, 400, "Invalid status value.");
         }
 
-        const assignment = await AssignmentModel.findOne({_id: id, company: companyId, deletedAt: null});
+        const assignment = await AssignmentModel.findOne({_id: assignmentId, company: companyId, deletedAt: null});
         if (!assignment) return sendError(res, 404, "Assignment not found.");
 
         const studentEntryIndex = assignment.students.findIndex(
