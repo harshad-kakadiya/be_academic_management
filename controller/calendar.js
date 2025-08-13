@@ -25,6 +25,7 @@ const createEvent = async (req, res) => {
             leave_status,
             branch,
             createdBy,
+            leave,
         } = req.body;
 
         if (!event || !from || !to) {
@@ -46,6 +47,7 @@ const createEvent = async (req, res) => {
             student,
             employee,
             leave_status,
+            leave,
             company: companyId,
             branch,
             createdBy,
