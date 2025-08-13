@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const {LEAVE_STATUS, EVENT_TYPES} = require("../constant");
+const {LEAVE_STATUS, EVENT_TYPES, LEAVE_TYPES} = require("../constant");
 
 const eventSchema = new mongoose.Schema(
     {
@@ -24,6 +24,11 @@ const eventSchema = new mongoose.Schema(
         },
         reason: {
             type: String,
+            default: null,
+        },
+        leave: {
+            type: String,
+            enum: Object.values(LEAVE_TYPES),
             default: null,
         },
         student: {
