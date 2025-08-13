@@ -9,10 +9,10 @@ const {
     deleteEvent,
 } = require("../../controller/calendar");
 
-router.post("/:companyId/event", createEvent);
-router.get("/:companyId/event", getAllEvents);
-router.get("/:companyId/event/:eventId", getSingleEvent);
-router.put("/:companyId/event/:eventId", updateEvent);
-router.delete("/:companyId/event/:eventId", deleteEvent);
+router.post("/:companyId/calendar", createEvent);
+router.get("/:companyId/calendar", getAllEvents);
+router.get("/:companyId/calendar/:calendarId", getSingleEvent);
+router.put("/:companyId/calendar/:calendarId", updateEvent);
+router.delete("/:companyId/calendar/:calendarId", deleteEvent);
 
 module.exports = router;

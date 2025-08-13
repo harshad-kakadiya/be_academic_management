@@ -108,13 +108,13 @@ const getAllEvents = async (req, res) => {
 // GET SINGLE EVENT
 const getSingleEvent = async (req, res) => {
     try {
-        const {companyId, eventId} = req.params;
+        const {companyId, calendarId} = req.params;
 
         const company = await validateCompany(companyId, res);
         if (!company) return;
 
         const event = await EventModel.findOne({
-            _id: eventId,
+            _id: calendarId,
             company: companyId,
             deletedAt: null,
         })
@@ -140,13 +140,13 @@ const getSingleEvent = async (req, res) => {
 // UPDATE EVENT
 const updateEvent = async (req, res) => {
     try {
-        const {companyId, eventId} = req.params;
+        const {companyId, calendarId} = req.params;
 
         const company = await validateCompany(companyId, res);
         if (!company) return;
 
         const existing = await EventModel.findOne({
-            _id: eventId,
+            _id: calendarId,
             company: companyId,
             deletedAt: null,
         });
@@ -162,7 +162,7 @@ const updateEvent = async (req, res) => {
             if (!isValidBranch) return;
         }
 
-        const updated = await EventModel.findByIdAndUpdate(eventId, req.body, {new: true});
+        const updated = await EventModel.findByIdAndUpdate(calendarId, req.body, {new: true});
 
         return res.status(200).json({
             status: 200,
@@ -179,14 +179,14 @@ const updateEvent = async (req, res) => {
 // DELETE EVENT (soft delete)
 const deleteEvent = async (req, res) => {
     try {
-        const {companyId, eventId} = req.params;
+        const {companyId, calendarId} = req.params;
         const deletedBy = req.user?._id;
 
         const company = await validateCompany(companyId, res);
         if (!company) return;
 
         const deleted = await EventModel.findOneAndUpdate(
-            {_id: eventId, company: companyId, deletedAt: null},
+            {_id: calendarId, company: companyId, deletedAt: null},
             {deletedAt: new Date(), deletedBy},
             {new: true}
         );
