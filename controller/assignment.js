@@ -1,7 +1,7 @@
+const mongoose = require("mongoose");
 const AssignmentModel = require("../models/assignment");
 const {validateCompany, validateBranch} = require("../helpers/validators");
 const {uploadFile} = require("../services/uploadfile");
-const mongoose = require("mongoose");
 const {ASSIGNMENT_STATUS} = require("../constant");
 
 const sendError = (res, status, message) => {
@@ -129,10 +129,7 @@ const getAssignments = async (req, res) => {
             .populate({
                 path: "students.student",
                 select: "firstName lastName _id contact branch",
-                populate: {
-                    path: "branch",
-                    select: "name _id"
-                }
+                populate: {path: "branch", select: "name _id"},
             })
             .sort({createdAt: -1})
             .skip(skip)
@@ -290,114 +287,10 @@ const deleteAssignment = async (req, res) => {
     }
 };
 
-// SUBMIT ASSIGNMENT
-const submitAssignment = async (req, res) => {
-    try {
-        const {companyId, assignmentId} = req.params;
-        const {studentId, remarks} = req.body;
-        const company = await validateCompany(companyId, res);
-        if (!company) return;
-
-        if (!assignmentId || !studentId) return sendError(res, 400, "Assignment id and studentId are required.");
-
-        const assignment = await AssignmentModel.findOne({_id: assignmentId, company: companyId, deletedAt: null});
-        if (!assignment) return sendError(res, 404, "Assignment not found.");
-
-        const studentEntryIndex = assignment.students.findIndex(
-            (s) => String(s.student) === String(studentId)
-        );
-
-        const attachmentUrl = req.file ? await uploadFile(req.file.buffer) : null;
-        const now = new Date();
-
-        if (studentEntryIndex === -1) {
-            assignment.students.push({
-                student: studentId,
-                status: ASSIGNMENT_STATUS.COMPLETED,
-                submissionDate: now,
-                remarks: remarks || "",
-                attachment: attachmentUrl,
-            });
-        } else {
-            assignment.students[studentEntryIndex].status = ASSIGNMENT_STATUS.COMPLETED;
-            assignment.students[studentEntryIndex].submissionDate = now;
-            if (remarks !== undefined) assignment.students[studentEntryIndex].remarks = remarks;
-            if (attachmentUrl) assignment.students[studentEntryIndex].attachment = attachmentUrl;
-        }
-
-        await assignment.save();
-
-        return res.status(200).json({
-            status: 200,
-            success: true,
-            message: "Assignment submitted successfully.",
-            data: assignment,
-        });
-    } catch (err) {
-        console.error("Error submitting assignment:", err);
-        return sendError(res, 500, "Internal server error. Failed to submit assignment.");
-    }
-};
-
-// UPDATE STUDENT STATUS
-const updateStudentStatus = async (req, res) => {
-    try {
-        const {companyId, assignmentId} = req.params;
-        const {studentId, status, remarks} = req.body;
-
-        const company = await validateCompany(companyId, res);
-        if (!company) return;
-
-        if (!assignmentId || !studentId) return sendError(res, 400, "Assignment id and studentId are required.");
-        if (!status) return sendError(res, 400, "status is required.");
-
-        if (!Object.values(ASSIGNMENT_STATUS).includes(status)) {
-            return sendError(res, 400, "Invalid status value.");
-        }
-
-        const assignment = await AssignmentModel.findOne({_id: assignmentId, company: companyId, deletedAt: null});
-        if (!assignment) return sendError(res, 404, "Assignment not found.");
-
-        const studentEntryIndex = assignment.students.findIndex(
-            (s) => String(s.student) === String(studentId)
-        );
-
-        if (studentEntryIndex === -1) {
-            const entry = {
-                student: studentId,
-                status,
-                submissionDate: status === ASSIGNMENT_STATUS.COMPLETED ? new Date() : null,
-                remarks: remarks || "",
-            };
-            assignment.students.push(entry);
-        } else {
-            assignment.students[studentEntryIndex].status = status;
-            if (status === ASSIGNMENT_STATUS.COMPLETED && !assignment.students[studentEntryIndex].submissionDate) {
-                assignment.students[studentEntryIndex].submissionDate = new Date();
-            }
-            if (remarks !== undefined) assignment.students[studentEntryIndex].remarks = remarks;
-        }
-
-        await assignment.save();
-
-        return res.status(200).json({
-            status: 200,
-            success: true,
-            message: "Student assignment status updated successfully.",
-            data: assignment,
-        });
-    } catch (err) {
-        console.error("Error updating student status:", err);
-        return sendError(res, 500, "Internal server error. Failed to update student status.");
-    }
-};
-
 module.exports = {
     createAssignment,
     getAssignments,
     getAssignmentById,
     updateAssignment,
     deleteAssignment,
-    submitAssignment,
-    updateStudentStatus,
 };

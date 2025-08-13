@@ -40,6 +40,7 @@ const batchSchema = new mongoose.Schema(
         createdBy: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User',
+            required: true,
         },
         deletedAt: {
             type: Date,

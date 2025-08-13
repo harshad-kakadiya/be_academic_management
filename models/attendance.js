@@ -20,14 +20,17 @@ const attendanceSchema = new mongoose.Schema(
         branch: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Branch',
+            required: true,
         },
         company: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Company',
+            required: true,
         },
         createdBy: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User',
+            required: true,
         },
         deletedAt: {
             type: Date,

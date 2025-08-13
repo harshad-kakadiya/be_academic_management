@@ -9,6 +9,7 @@ const eventSchema = new mongoose.Schema(
         },
         event_type: {
             type: String,
+            required: true,
             enum: Object.values(EVENT_TYPES),
         },
         from: {
@@ -53,6 +54,7 @@ const eventSchema = new mongoose.Schema(
         branch: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "Branch",
+            required: true,
         },
         createdBy: {
             type: mongoose.Schema.Types.ObjectId,
