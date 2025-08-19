@@ -12,8 +12,9 @@ const sendError = (res, status, message) => {
     return res.status(status).json({status, success: false, message});
 };
 
-// CREATE EMPLOYEE (with user)
+// CREATE EMPLOYEE (with user, transactional)
 const createEmployee = async (req, res) => {
+    const session = await mongoose.startSession();
     try {
         const {companyId} = req.params;
         const company = await validateCompany(companyId, res);
@@ -53,47 +54,54 @@ const createEmployee = async (req, res) => {
         const userName = await generateUniqueUsername(company.name, firstName, lastName);
         const hashedPassword = await createHash(password);
 
-
         let employeeImage = null;
         if (req.file) {
             const buffer = req.file.buffer;
             employeeImage = await uploadFile(buffer);
         }
 
-        const newUser = await UserModel.create({
-            firstName,
-            lastName,
-            userName,
-            email,
-            contact,
-            password: hashedPassword,
-            role: ROLES.EMPLOYEE,
-            company: companyId,
-            branch,
-            subRole,
-            userImage: employeeImage
-        });
+        let newUser, newEmployee;
 
-        const newEmployee = await EmployeeModel.create({
-            firstName,
-            lastName,
-            email,
-            userName,
-            contact,
-            education,
-            salary,
-            joinDate,
-            subjects,
-            timeAvailable,
-            guardianInfo,
-            address,
-            employeeImage,
-            user: newUser._id,
-            company: companyId,
-            branch,
-            subRole,
-            createdBy,
-            dob: dob === 'null' || dob === '' ? undefined : dob,
+        await session.withTransaction(async () => {
+            newUser = await UserModel.create([{
+                firstName,
+                lastName,
+                userName,
+                email,
+                contact,
+                password: hashedPassword,
+                role: ROLES.EMPLOYEE,
+                company: companyId,
+                branch,
+                subRole,
+                userImage: employeeImage
+            }], {session});
+
+            newUser = newUser[0];
+
+            newEmployee = await EmployeeModel.create([{
+                firstName,
+                lastName,
+                email,
+                userName,
+                contact,
+                education,
+                salary,
+                joinDate,
+                subjects,
+                timeAvailable,
+                guardianInfo,
+                address,
+                employeeImage,
+                user: newUser._id,
+                company: companyId,
+                branch,
+                subRole,
+                createdBy,
+                dob: dob === 'null' || dob === '' ? undefined : dob,
+            }], {session});
+
+            newEmployee = newEmployee[0];
         });
 
         return res.status(201).json({
@@ -105,6 +113,8 @@ const createEmployee = async (req, res) => {
     } catch (err) {
         console.error("Error creating employee:", err);
         return sendError(res, 500, "Internal server error. Failed to create employee.");
+    } finally {
+        session.endSession();
     }
 };
 
@@ -129,7 +139,7 @@ const getAllEmployees = async (req, res) => {
         }
 
         const employees = await EmployeeModel.find(query)
-            .populate("user", "userName email")
+            .populate("user", "userName email firstName lastName contact subRole userImage")
             .populate("branch", "name");
 
         return res.status(200).json({
@@ -155,7 +165,7 @@ const getSingleEmployee = async (req, res) => {
             company: companyId,
             deletedAt: null,
         })
-            .populate("user", "userName email")
+            .populate("user", "userName email firstName lastName contact subRole userImage")
             .populate("branch", "name");
 
         if (!employee) {
@@ -173,7 +183,7 @@ const getSingleEmployee = async (req, res) => {
     }
 };
 
-// UPDATE EMPLOYEE
+// UPDATE EMPLOYEE (keeps User in sync)
 const updateEmployee = async (req, res) => {
     const session = await mongoose.startSession();
     try {
@@ -205,16 +215,10 @@ const updateEmployee = async (req, res) => {
         }
 
         await session.withTransaction(async () => {
-            const updatedEmployee = await EmployeeModel.findByIdAndUpdate(
-                employeeId,
-                updateData,
-                {new: true, session}
-            );
+            await EmployeeModel.findByIdAndUpdate(employeeId, updateData, {new: true, session});
 
             const targetUserId = employee.user && employee.user.toString();
-            if (!targetUserId) {
-                return;
-            }
+            if (!targetUserId) return;
 
             const userUpdateData = {};
             if (updateData.firstName) userUpdateData.firstName = updateData.firstName;
@@ -226,22 +230,24 @@ const updateEmployee = async (req, res) => {
             if (uploadedImageUrl) userUpdateData.userImage = uploadedImageUrl;
 
             if (Object.keys(userUpdateData).length > 0) {
-                await UserModel.findByIdAndUpdate(targetUserId, userUpdateData, {
-                    new: true,
-                    session,
-                });
+                await UserModel.findByIdAndUpdate(targetUserId, userUpdateData, {new: true, session});
             }
         });
 
         const refreshedEmployee = await EmployeeModel.findById(employeeId)
-            .populate("user", "userName email")
+            .populate("user", "userName email firstName lastName contact subRole branch userImage")
             .populate("branch", "name");
+
+        const refreshedUser = await UserModel.findById(refreshedEmployee.user._id);
 
         return res.status(200).json({
             status: 200,
             success: true,
-            message: "Employee and linked user (if any) updated successfully.",
-            data: refreshedEmployee,
+            message: "Employee and linked user updated successfully.",
+            data: {
+                employee: refreshedEmployee,
+                user: refreshedUser,
+            },
         });
     } catch (err) {
         console.error("Error updating employee:", err);

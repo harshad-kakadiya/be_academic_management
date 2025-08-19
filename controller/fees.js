@@ -85,7 +85,7 @@ const incStudentCounter = async (studentId, type, amt, gstAmt) => {
     if (amt !== 0) {
         if (isTuitionType(type)) updateObj.amountPaid = amt;
         else if (isExtraType(type)) updateObj.extraPaid = amt;
-        else updateObj.amountPaid = amt; // fallback to amountPaid
+        else updateObj.amountPaid = amt;
     }
 
     if (gstAmt !== 0) {
