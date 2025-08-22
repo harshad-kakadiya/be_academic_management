@@ -12,7 +12,6 @@ const router = express.Router();
 router.post("/register", register);
 router.post("/login", login);
 router.post("/reset-password", auth, resetPassword);
-
 router.get("/me", auth, getUser);
 router.post("/send-reset-otp", sendResetOTP);
 router.post("/verify-reset-otp", verifyOTPAndSetPassword);

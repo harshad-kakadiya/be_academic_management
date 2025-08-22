@@ -1,6 +1,11 @@
 const mongoose = require('mongoose');
 const StudentModel = require("../models/student");
 const UserModel = require("../models/user");
+const FeesModel = require("../models/fees");
+const AttendanceModel = require('../models/attendance');
+const AssignmentModel = require('../models/assignment');
+const EventModel = require('../models/calendar');
+const ExamModel = require('../models/exam');
 const {validateCompany, validateBranch} = require("../helpers/validators");
 const generateUniqueUsername = require("../helpers/generateUsername");
 const {createHash} = require("../helpers/hash");
@@ -513,6 +518,261 @@ const addStudentRemark = async (req, res) => {
     }
 };
 
+// GET ALL FEES FOR A STUDENT
+const getStudentFees = async (req, res) => {
+    try {
+        const {companyId, studentId} = req.params;
+
+        const company = await validateCompany(companyId, res);
+        if (!company) return;
+
+        if (!mongoose.Types.ObjectId.isValid(studentId)) {
+            return sendError(res, 400, "Invalid student ID");
+        }
+
+        const student = await StudentModel.findOne({
+            _id: studentId,
+            company: companyId,
+            deletedAt: null
+        });
+
+        if (!student) {
+            return sendError(res, 404, "Student not found");
+        }
+
+        const fees = await FeesModel.find({
+            student: studentId,
+            company: companyId,
+            deletedAt: null
+        }).populate('branch', 'name').populate('createdBy', 'firstName lastName userName');
+
+        return res.status(200).json({
+            status: 200,
+            success: true,
+            data: {
+                student,
+                fees
+            },
+        });
+
+    } catch (err) {
+        console.error("Error fetching student fees:", err);
+        return sendError(res, 500, "Internal server error. Failed to fetch student fees.");
+    }
+};
+
+const getStudentAttendance = async (req, res) => {
+    try {
+        const {companyId, studentId} = req.params;
+
+        const company = await validateCompany(companyId, res);
+        if (!company) return;
+
+        if (!mongoose.Types.ObjectId.isValid(studentId)) {
+            return sendError(res, 400, 'Invalid student ID');
+        }
+
+        const student = await StudentModel.findOne({
+            _id: studentId,
+            company: companyId,
+            deletedAt: null
+        });
+
+        if (!student) {
+            return sendError(res, 404, 'Student not found');
+        }
+
+        const attendanceRecords = await AttendanceModel.find({
+            student: studentId,
+            company: companyId,
+            deletedAt: null
+        })
+            .populate('branch', 'name')
+            .populate('createdBy', 'firstName lastName userName')
+            .sort({date: -1});
+
+        return res.status(200).json({
+            status: 200,
+            success: true,
+            data: {
+                student,
+                attendance: attendanceRecords
+            }
+        });
+    } catch (err) {
+        console.error('Error fetching student attendance:', err);
+        return sendError(res, 500, 'Internal server error. Failed to fetch student attendance.');
+    }
+};
+
+const getStudentAssignments = async (req, res) => {
+    try {
+        const {companyId, studentId} = req.params;
+
+        const company = await validateCompany(companyId, res);
+        if (!company) return;
+
+        if (!mongoose.Types.ObjectId.isValid(studentId)) {
+            return sendError(res, 400, 'Invalid student ID');
+        }
+
+        const student = await StudentModel.findOne({
+            _id: studentId,
+            company: companyId,
+            deletedAt: null
+        });
+
+        if (!student) {
+            return sendError(res, 404, 'Student not found');
+        }
+
+        const assignments = await AssignmentModel.find({
+            company: companyId,
+            deletedAt: null,
+            'students.student': studentId
+        })
+            .populate('branch', 'name')
+            .populate('assignedBy', 'firstName lastName')
+            .populate('createdBy', 'firstName lastName userName');
+
+        const result = assignments.map(assignment => {
+            const studentData = assignment.students.find(s => s.student.toString() === studentId);
+            return {
+                _id: assignment._id,
+                title: assignment.title,
+                description: assignment.description,
+                assignmentType: assignment.assignmentType,
+                subject: assignment.subject,
+                issueDate: assignment.issueDate,
+                dueDate: assignment.dueDate,
+                assignedBy: assignment.assignedBy,
+                branch: assignment.branch,
+                createdBy: assignment.createdBy,
+                studentAssignment: studentData,
+                otherInfo: assignment.otherInfo,
+            };
+        });
+
+        return res.status(200).json({
+            status: 200,
+            success: true,
+            data: {
+                student,
+                assignments: result
+            }
+        });
+    } catch (err) {
+        console.error('Error fetching student assignments:', err);
+        return sendError(res, 500, 'Internal server error. Failed to fetch student assignments.');
+    }
+};
+
+// GET ALL EXAM RESULTS FOR A STUDENT
+const getStudentExams = async (req, res) => {
+    try {
+        const {companyId, studentId} = req.params;
+
+        const company = await validateCompany(companyId, res);
+        if (!company) return;
+
+        if (!mongoose.Types.ObjectId.isValid(studentId)) {
+            return sendError(res, 400, 'Invalid student ID');
+        }
+
+        const student = await StudentModel.findOne({
+            _id: studentId,
+            company: companyId,
+            deletedAt: null
+        });
+
+        if (!student) {
+            return sendError(res, 404, 'Student not found');
+        }
+
+        const exams = await ExamModel.find({
+            company: companyId,
+            deletedAt: null,
+            'students.student': studentId
+        })
+            .populate('branch', 'name')
+            .populate('conductedBy', 'firstName lastName')
+            .populate('createdBy', 'firstName lastName userName');
+
+        const result = exams.map(exam => {
+            const studentResult = exam.students.find(s => s.student.toString() === studentId);
+            return {
+                _id: exam._id,
+                title: exam.title,
+                description: exam.description,
+                examType: exam.examType,
+                date: exam.date,
+                totalMarks: exam.totalMarks,
+                branch: exam.branch,
+                conductedBy: exam.conductedBy,
+                createdBy: exam.createdBy,
+                studentResult,
+                otherInfo: exam.otherInfo,
+            };
+        });
+
+        return res.status(200).json({
+            status: 200,
+            success: true,
+            data: {
+                student,
+                exams: result
+            }
+        });
+    } catch (err) {
+        console.error('Error fetching student exams:', err);
+        return sendError(res, 500, 'Internal server error. Failed to fetch student exams.');
+    }
+};
+
+const getStudentEvents = async (req, res) => {
+    try {
+        const {companyId, studentId} = req.params;
+
+        const company = await validateCompany(companyId, res);
+        if (!company) return;
+
+        if (!mongoose.Types.ObjectId.isValid(studentId)) {
+            return sendError(res, 400, 'Invalid student ID');
+        }
+
+        const student = await StudentModel.findOne({
+            _id: studentId,
+            company: companyId,
+            deletedAt: null
+        });
+
+        if (!student) {
+            return sendError(res, 404, 'Student not found');
+        }
+
+        const events = await EventModel.find({
+            company: companyId,
+            student: studentId,
+            deletedAt: null
+        })
+            .populate('branch', 'name')
+            .populate('createdBy', 'firstName lastName userName')
+            .sort({from: -1});
+
+        return res.status(200).json({
+            status: 200,
+            success: true,
+            data: {
+                student,
+                events
+            }
+        });
+    } catch (err) {
+        console.error('Error fetching student events:', err);
+        return sendError(res, 500, 'Internal server error. Failed to fetch student events.');
+    }
+};
+
 module.exports = {
     createStudent,
     getAllStudents,
@@ -521,4 +781,9 @@ module.exports = {
     deleteStudent,
     bulkUploadStudents,
     addStudentRemark,
+    getStudentFees,
+    getStudentAttendance,
+    getStudentAssignments,
+    getStudentExams,
+    getStudentEvents
 };

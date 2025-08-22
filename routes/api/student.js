@@ -9,6 +9,11 @@ const {
     deleteStudent,
     addStudentRemark,
     bulkUploadStudents,
+    getStudentFees,
+    getStudentAttendance,
+    getStudentAssignments,
+    getStudentExams,
+    getStudentEvents
 } = require("../../controller/student");
 
 const upload = require("../../middlewares/upload");
@@ -20,5 +25,10 @@ router.put("/:companyId/student/:studentId", upload.single("studentImage"), upda
 router.delete("/:companyId/student/:studentId", deleteStudent);
 router.post('/:companyId/students/:studentId/remark', addStudentRemark);
 router.post('/:companyId/students/bulk-upload', upload.single("file"), bulkUploadStudents);
+router.get('/:companyId/student/:studentId/fees', getStudentFees);
+router.get('/:companyId/student/:studentId/attendance', getStudentAttendance);
+router.get('/:companyId/student/:studentId/assignments', getStudentAssignments);
+router.get('/:companyId/student/:studentId/exams', getStudentExams);
+router.get('/:companyId/student/:studentId/events', getStudentEvents);
 
 module.exports = router;
